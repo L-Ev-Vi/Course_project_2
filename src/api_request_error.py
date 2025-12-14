@@ -9,6 +9,10 @@ class ApiRequestError(Exception):
         """Метод для инициализации текста исключения."""
         self.message = args[0] if args else "Ошибка при выполнении запроса на базовый URL."
 
+    def __str__(self) -> str:
+        """Метод выводит сообщение об ошибке."""
+        return self.message
+
 
 class ApiRequestError400(ApiRequestError):
     """Класс исключения, который отвечает за обработку событий,
@@ -25,4 +29,4 @@ class ApiRequestError500(ApiRequestError):
 
     def __init__(self, *args: Any) -> None:
         """Метод для инициализации текста исключения."""
-        self.message = args[0] if args else "Ошибка со сервера при выполнении запроса."
+        self.message = args[0] if args else "Ошибка на стороне сервера при выполнении запроса."

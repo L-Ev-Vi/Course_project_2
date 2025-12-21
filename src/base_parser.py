@@ -5,13 +5,11 @@ from typing import Any
 class Parser(ABC):
     """Абстрактный класс для работы с API сервисами"""
 
-    @callable
+    @classmethod
     @abstractmethod
-    def __connecting_to_api(self) -> Any:
+    def __connecting_to_api(cls) -> list[Any]:
         """Метод подключения к API в абстрактном классе"""
-        pass
 
     @abstractmethod
     def get_vacancies(self, keyword: str) -> Any:
         """Метод получения данных в абстрактном классе"""
-        pass

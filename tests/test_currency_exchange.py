@@ -1,5 +1,5 @@
-from unittest.mock import patch
 import os
+from unittest.mock import patch
 
 
 def test_init_currency_exchange(currencyexchange):
@@ -14,7 +14,10 @@ def test_get_currency_exchange(mock_get, currencyexchange):
     assert currencyexchange.get_currency_exchange(10) == 100
     mock_get.assert_called_once_with(
         "https://api.apilayer.com/exchangerates_data/convert?to=RUB&from=USD&amount=10",
-        headers={"apikey": f"{aip_key}"}, data={})
+        headers={"apikey": f"{aip_key}"},
+        data={},
+    )
+
 
 @patch("requests.get")
 def test_get_currency_exchange_error_500(mock_get, currencyexchange, capsys):
@@ -24,6 +27,7 @@ def test_get_currency_exchange_error_500(mock_get, currencyexchange, capsys):
     assert captured.out == "Ошибка на стороне сервера при выполнении запроса.\n"
     assert currencyexchange.get_currency_exchange(10) == 0
 
+
 @patch("requests.get")
 def test_get_currency_exchange_error_400(mock_get, currencyexchange, capsys):
     mock_get.return_value.status_code = 400
@@ -31,6 +35,7 @@ def test_get_currency_exchange_error_400(mock_get, currencyexchange, capsys):
     captured = capsys.readouterr()
     assert captured.out == "Ошибка со стороны пользователя при выполнении запроса.\n"
     assert currencyexchange.get_currency_exchange(10) == 0
+
 
 @patch("requests.get")
 def test_get_currency_exchange_error_not_200(mock_get, currencyexchange, capsys):

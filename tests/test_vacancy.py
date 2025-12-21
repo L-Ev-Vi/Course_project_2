@@ -1,5 +1,7 @@
-import pytest
 from unittest.mock import patch
+
+import pytest
+
 from src.vacancy import Vacancy
 
 
@@ -93,21 +95,61 @@ def test_init_vacancy_error_int_salary(input_mock, capsys):
 @patch("builtins.input")
 def test_init_vacancy_error_value_salary(input_mock, capsys):
     input_mock.return_value = "100"
-    vacancy = Vacancy("Python Developer", "<https://hh.ru/vacancy/123456>", "Требования: опыт работы от 3 лет...",
-                      "100.50")
+    vacancy = Vacancy(
+        "Python Developer", "<https://hh.ru/vacancy/123456>", "Требования: опыт работы от 3 лет...", "100.50"
+    )
     captured = capsys.readouterr()
-    assert captured.out == ("Не корректно указана заработная плата, значение 'salary' должно быть целым числом, \n"
-                            "или диапазоном чисел c разделителем '-', 'пример: 1000 или 1000-2000'\n")
+    assert captured.out == (
+        "Не корректно указана заработная плата, значение 'salary' должно быть целым числом, \n"
+        "или диапазоном чисел c разделителем '-', 'пример: 1000 или 1000-2000'\n"
+    )
     assert vacancy._Vacancy__salary == "100 RUB"
 
 
-def test_lt_le_gt_true(vacancy1, vacancy2):
-    assert (vacancy1 < vacancy2) == True
-    assert (vacancy2 > vacancy1) == True
+def test_lt_le_gt_(vacancy1, vacancy2, vacancy7, vacancy8, vacancy9):
+    assert (vacancy1 < vacancy2)
+    assert (vacancy2 > vacancy1)
+    assert not (vacancy2 < vacancy1)
+    assert not (vacancy1 > vacancy2)
+    assert (vacancy1 <= vacancy2)
 
-def test_lt_le_gt_false(vacancy1, vacancy2):
-    assert (vacancy2 < vacancy1) == False
-    assert (vacancy1 > vacancy2) == False
-    assert (vacancy1 == vacancy2) == False
+    assert (vacancy7 < vacancy8)
+    assert (vacancy8 > vacancy7)
+    assert not (vacancy8 < vacancy7)
+    assert not (vacancy7 > vacancy8)
+    assert (vacancy7 <= vacancy8)
+
+    assert (vacancy9 < vacancy2)
+    assert (vacancy2 > vacancy9)
+    assert not (vacancy2 < vacancy9)
+    assert not (vacancy9 > vacancy2)
+    assert (vacancy9 <= vacancy2)
+    assert not (vacancy2 <= vacancy9)
 
 
+@patch("requests.get")
+def test_lt_le_gt_true_USD(mock_get, vacancy5, vacancy6):
+    mock_get.return_value.status_code = 200
+    mock_get.return_value.json.return_value = {"result": 100}
+    assert not (vacancy5 > vacancy6)
+    assert not (vacancy5 < vacancy6)
+
+
+def test_lt_error(vacancy1, object_hh1):
+    with pytest.raises(TypeError, match="Переданный объект не является объектом класса 'Vacancy'"):
+        vacancy1 > object_hh1
+
+
+def test_le_error(vacancy1, object_hh1):
+    with pytest.raises(TypeError, match="Переданный объект не является объектом класса 'Vacancy'"):
+        vacancy1 < object_hh1
+
+
+def test_gt_error(vacancy1, object_hh1):
+    with pytest.raises(TypeError, match="Переданный объект не является объектом класса 'Vacancy'"):
+        vacancy1 <= object_hh1
+
+
+def test_init_error():
+    with pytest.raises(TypeError, match="Значение 123456 должно иметь тип 'str', а не <class 'int'>"):
+        Vacancy("Python Developer", 123456, "Требования: опыт работы от 3 лет...", "100")

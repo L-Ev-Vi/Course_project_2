@@ -47,8 +47,3 @@ class CurrencyExchange:
             return 0
         else:
             return result
-
-
-if __name__ == "__main__":
-    a = CurrencyExchange("USD")
-    print(a.get_currency_exchange(10))

@@ -3,8 +3,14 @@ from unittest.mock import patch
 
 def test_init_object(object_hh1):
     assert object_hh1._HH__url == "https://api.hh.ru/vacancies"
-    assert object_hh1._HH__params == {"page": 0, "per_page": 0, "text": "", "area": 1, "period": 1,
-                                      "search_field": "name"}
+    assert object_hh1._HH__params == {
+        "page": 0,
+        "per_page": 0,
+        "text": "",
+        "area": 1,
+        "period": 1,
+        "search_field": "name",
+    }
     assert object_hh1._HH__headers == {"User-Agent": "HH-User-Agent"}
     assert object_hh1._HH__vacancies == []
 
@@ -12,24 +18,44 @@ def test_init_object(object_hh1):
 @patch("requests.get")
 def test_get_vacancies(mock_get, object_hh1):
     mock_get.return_value.status_code = 200
-    mock_get.return_value.json.return_value = {"pages": 0, "items":
-        [{'id': '128721230', 'premium': False,
-          'name': 'Стажёр / Junior Backend-разработчик (Python / Go)',
-          'department': None, 'has_test': True,
-          'response_letter_required': True,
-          'area': {'id': '1', 'name': 'Москва',
-                   'url': 'https://api.hh.ru/areas/1'}, 'salary': None,
-          'salary_range': None}]}
-    assert object_hh1.get_vacancies("python") == [{'id': '128721230', 'premium': False,
-                                                   'name': 'Стажёр / Junior Backend-разработчик (Python / Go)',
-                                                   'department': None, 'has_test': True,
-                                                   'response_letter_required': True,
-                                                   'area': {'id': '1', 'name': 'Москва',
-                                                            'url': 'https://api.hh.ru/areas/1'}, 'salary': None,
-                                                   'salary_range': None}]
-    mock_get.assert_called_once_with(url=object_hh1._HH__url,
-                                     params={"page": 0, "per_page": 50, "text": "python", "area": 1, "period": 1,
-                                             "search_field": "name"})
+    mock_get.return_value.json.return_value = {
+        "items": [
+            {
+                "id": "128721230",
+                "name": "Стажёр / Junior Backend-разработчик (Python / Go)",
+                "url": "https://api.hh.ru/areas/1",
+                "salary": 100000,
+            }
+        ],
+        "found": 32,
+        "pages": 1,
+        "page": 1,
+        "per_page": 50,
+        "clusters": None,
+        "arguments": None,
+        "fixes": None,
+        "suggests": None,
+        "alternate_url": "https://hh.ru/search/vacancy?area=1&enable_snippets=true&items_on_page=50&page=1&search_"
+                         "field=name&search_period=1&text=Python",
+    }
+    assert object_hh1.get_vacancies("python") == [
+        {
+            "id": "128721230",
+            "name": "Стажёр / Junior Backend-разработчик (Python / Go)",
+            "url": "https://api.hh.ru/areas/1",
+            "salary": 100000,
+        },
+        {
+            "id": "128721230",
+            "name": "Стажёр / Junior Backend-разработчик (Python / Go)",
+            "url": "https://api.hh.ru/areas/1",
+            "salary": 100000,
+        },
+    ]
+    mock_get.assert_called_with(
+        url=object_hh1._HH__url,
+        params={"page": 1, "per_page": 50, "text": "python", "area": 1, "period": 1, "search_field": "name"},
+    )
 
 
 def test_get_vacancies_error(object_hh1, capsys):
@@ -64,3 +90,27 @@ def test_connecting_to_api_error_400(mock_get, object_hh1, capsys):
     captured = capsys.readouterr()
     assert captured.out == "Ошибка со стороны пользователя при выполнении запроса.\n"
     assert object_hh1.get_vacancies("python") == []
+
+
+# @patch("requests.get")
+# def test_get_vacancies_(mock_get, object_hh1):
+#     mock_get.return_value.status_code = 200
+#     mock_get.return_value.
+#     mock_get.return_value.json.return_value = {"pages": 1, "items":
+#         [{'id': '128721230', 'premium': False,
+#           'name': 'Стажёр / Junior Backend-разработчик (Python / Go)',
+#           'department': None, 'has_test': True,
+#           'response_letter_required': True,
+#           'area': {'id': '1', 'name': 'Москва',
+#                    'url': 'https://api.hh.ru/areas/1'}, 'salary': None,
+#           'salary_range': None}]}
+#     assert object_hh1.get_vacancies("python") == [{'id': '128721230', 'premium': False,
+#                                                    'name': 'Стажёр / Junior Backend-разработчик (Python / Go)',
+#                                                    'department': None, 'has_test': True,
+#                                                    'response_letter_required': True,
+#                                                    'area': {'id': '1', 'name': 'Москва',
+#                                                             'url': 'https://api.hh.ru/areas/1'}, 'salary': None,
+#                                                    'salary_range': None}]
+#     mock_get.assert_called_once_with(url=object_hh1._HH__url,
+#                                      params={"page": 0, "per_page": 50, "text": "python", "area": 1, "period": 1,
+#                                              "search_field": "name"})

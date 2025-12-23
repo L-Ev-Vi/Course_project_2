@@ -78,7 +78,7 @@ class HH(Parser):
                         {
                             "id": res["id"],
                             "name": res["name"],
-                            "salary": res["salary"],
+                            "salary": None,
                             "url": res["alternate_url"],
                             "description": res["snippet"]["requirement"],
                         }
@@ -95,8 +95,16 @@ if __name__ == "__main__":
 
 # """
 # {'id': '128762270', 'name': 'Python разработчик (Middle+/Senior)',
-#  'salary': {'from': None, 'to': 410000, 'currency': 'RUR'},
+#  'salary': {'from': None, 'to': 410000, 'currency': 'RUB'},
 #  'alternate_url': 'https://hh.ru/vacancy/128762270', 'relations': [],
 #  'snippet': {
 #     'requirement': 'Опыт коммерческой разработки'}
+#  """
+
+# """
+# {'id': '128762270',
+#  'name': 'Python разработчик (Middle+/Senior)',
+#  'salary': {'from': None, 'to': 410000, 'currency': 'RUB'},
+#  'url': 'https://hh.ru/vacancy/128762270',
+#  'description': 'Опыт коммерческой разработки'}
 #  """

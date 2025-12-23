@@ -1,4 +1,4 @@
-
+from src.greeting_time_day import GreetingTimeDay
 
 def user_interaction() -> None:
     """Функция для взаимодействия с пользователем"""
@@ -11,3 +11,10 @@ def user_interaction() -> None:
     # ( - запрос на ключевые слова для фильтрации вакансий)
     # ( - запрос на диапазон зарплат )
     # ( - вывести топ N-число вакансий по зарплате с ключевым словом в описании)
+
+    platforms = ["HeadHunter"]
+    print(GreetingTimeDay.get_a_greeting())
+    action = input("")
+
+if __name__ == '__main__':
+    user_interaction()

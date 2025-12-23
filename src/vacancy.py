@@ -53,6 +53,10 @@ class Vacancy:
             try:
                 if salary is None or salary == "":
                     result = {"salary": "Зарплата не указана"}
+                elif isinstance(salary, dict):
+                    if salary["currency"]:
+                        if salary["from"] or salary["to"]:
+                            result = {"salary": salary}
                 elif type(salary) is not str:
                     raise TypeError(f"Значение {salary} должно иметь тип 'str', а не {type(salary)}")
                 elif pattern.fullmatch(salary) or pattern1.fullmatch(salary) or pattern2.fullmatch(salary):
@@ -75,12 +79,14 @@ class Vacancy:
                             "->"
                         )
                         if choosing_currency not in ["1", "2", "3"] or choosing_currency == "":
-                            result = {"salary": {"from": initial_range, "to": final_range, "currency": "RUB"}}
+                            result = {
+                                "salary": {"from": int(initial_range), "to": int(final_range), "currency": "RUB"}
+                            }
                         else:
                             result = {
                                 "salary": {
-                                    "from": initial_range,
-                                    "to": final_range,
+                                    "from": int(initial_range),
+                                    "to": int(final_range),
                                     "currency": currencies[int(choosing_currency) - 1],
                                 }
                             }
@@ -105,14 +111,14 @@ class Vacancy:
                     )
                     if choosing_currency not in ["1", "2", "3"] or choosing_currency == "":
                         if prefix_value == "1":
-                            result = {"salary": {"from": salary, "to": None, "currency": "RUB"}}
+                            result = {"salary": {"from": int(salary), "to": None, "currency": "RUB"}}
                         else:
-                            result = {"salary": {"from": None, "to": salary, "currency": "RUB"}}
+                            result = {"salary": {"from": None, "to": int(salary), "currency": "RUB"}}
                     else:
                         if prefix_value == "1":
                             result = {
                                 "salary": {
-                                    "from": salary,
+                                    "from": int(salary),
                                     "to": None,
                                     "currency": currencies[int(choosing_currency) - 1],
                                 }
@@ -121,7 +127,7 @@ class Vacancy:
                             result = {
                                 "salary": {
                                     "from": None,
-                                    "to": salary,
+                                    "to": int(salary),
                                     "currency": currencies[int(choosing_currency) - 1],
                                 }
                             }
@@ -149,14 +155,14 @@ class Vacancy:
         if self.__salary["salary"] == "Зарплата не указана":
             salary = 0
         elif not self.__salary["salary"]["from"]:
-            salary = int(self.__salary["salary"]["to"])
+            salary = self.__salary["salary"]["to"]
             if self.__salary["salary"]["currency"] != "RUB":
-                currency = CurrencyExchange(self.__salary["salary"]["to"])
+                currency = CurrencyExchange(self.__salary["salary"]["currency"])
                 salary = currency.get_currency_exchange(salary)
         else:
-            salary = int(self.__salary["salary"]["from"])
+            salary = self.__salary["salary"]["from"]
             if self.__salary["salary"]["currency"] != "RUB":
-                currency = CurrencyExchange(self.__salary["salary"]["from"])
+                currency = CurrencyExchange(self.__salary["salary"]["currency"])
                 salary = currency.get_currency_exchange(salary)
         return salary
 
@@ -167,34 +173,34 @@ class Vacancy:
         if other.__salary["salary"] == "Зарплата не указана":
             salary = 0
         elif not other.__salary["salary"]["from"]:
-            salary = int(other.__salary["salary"]["to"])
+            salary = other.__salary["salary"]["to"]
             if other.__salary["salary"]["currency"] != "RUB":
-                currency = CurrencyExchange(other.__salary["salary"]["to"])
+                currency = CurrencyExchange(other.__salary["salary"]["currency"])
                 salary = currency.get_currency_exchange(salary)
         else:
-            salary = int(other.__salary["salary"]["from"])
+            salary = other.__salary["salary"]["from"]
             if other.__salary["salary"]["currency"] != "RUB":
-                currency = CurrencyExchange(other.__salary["salary"]["from"])
+                currency = CurrencyExchange(other.__salary["salary"]["currency"])
                 salary = currency.get_currency_exchange(salary)
         return self.__get_minimum_wage() < salary
 
-    def __le__(self, other: object) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Метод для операции сравнения «меньше или равно»"""
         if not isinstance(other, Vacancy):
             raise TypeError("Переданный объект не является объектом класса 'Vacancy'")
         if other.__salary["salary"] == "Зарплата не указана":
             salary = 0
         elif not other.__salary["salary"]["from"]:
-            salary = int(other.__salary["salary"]["to"])
+            salary = other.__salary["salary"]["to"]
             if other.__salary["salary"]["currency"] != "RUB":
-                currency = CurrencyExchange(other.__salary["salary"]["to"])
+                currency = CurrencyExchange(other.__salary["salary"]["currency"])
                 salary = currency.get_currency_exchange(salary)
         else:
-            salary = int(other.__salary["salary"]["from"])
+            salary = other.__salary["salary"]["from"]
             if other.__salary["salary"]["currency"] != "RUB":
-                currency = CurrencyExchange(other.__salary["salary"]["from"])
+                currency = CurrencyExchange(other.__salary["salary"]["currency"])
                 salary = currency.get_currency_exchange(salary)
-        return self.__get_minimum_wage() <= salary
+        return self.__get_minimum_wage() == salary
 
     def __gt__(self, other: object) -> bool:
         """Метод для операции сравнения «больше»"""
@@ -203,21 +209,20 @@ class Vacancy:
         if other.__salary["salary"] == "Зарплата не указана":
             salary = 0
         elif not other.__salary["salary"]["from"]:
-            salary = int(other.__salary["salary"]["to"])
+            salary = other.__salary["salary"]["to"]
             if other.__salary["salary"]["currency"] != "RUB":
-                currency = CurrencyExchange(other.__salary["salary"]["to"])
+                currency = CurrencyExchange(other.__salary["salary"]["currency"])
                 salary = currency.get_currency_exchange(salary)
         else:
-            salary = int(other.__salary["salary"]["from"])
+            salary = other.__salary["salary"]["from"]
             if other.__salary["salary"]["currency"] != "RUB":
-                currency = CurrencyExchange(other.__salary["salary"]["from"])
+                currency = CurrencyExchange(other.__salary["salary"]["currency"])
                 salary = currency.get_currency_exchange(salary)
         return self.__get_minimum_wage() > salary
 
     @property
     def get_job_properties(self) -> dict:
-        """Магический метод, который делает созданный объект вызываемым (callable).
-        Результатом вызова является словарь в котором содержатся публичная информация о свойствах объекта."""
+        """Метод возвращает словарь в котором содержатся публичная информация о свойствах объекта."""
         return {
             "id": self.__id,
             "name": self.__name,
@@ -226,10 +231,58 @@ class Vacancy:
             "description": self.__description,
         }
 
+    @classmethod
+    def cast_to_object_list(cls, list_vacancies: list) -> list:
+        """Метод преобразование набора данных в список объектов"""
+        result = []
+        try:
+            if not isinstance(list_vacancies, list):
+                raise TypeError(f"Передаваемый аргумент должно быть списком вакансий а не {type(list_vacancies)}")
+            elif len(list_vacancies) == 0:
+                raise ValueError("Передаваемый список пуст")
+            else:
+                for vacancy in list_vacancies:
+                    result.append(Vacancy(vacancy["name"], vacancy["url"], vacancy["description"], vacancy["salary"]))
+        except TypeError as e:
+            print(e)
+        except ValueError as e:
+            print(e)
+        return result
+
 
 if __name__ == "__main__":
-    v = Vacancy("Python Developer", "<https://hh.ru/vacancy/123456>", "Требования: опыт работы от 3 лет...", "200-100")
+    # v = Vacancy("Python Developer", "<https://hh.ru/vacancy/123456>", "Требования: опыт работы от 3 лет...", "100")
+    # c = Vacancy("Python Developer", "<https://hh.ru/vacancy/123456>", "Требования: опыт работы от 3 лет...", "100")
+    # print(v == c)
     # print(v._Vacancy__salary)
-    print(v.get_job_properties)
-    print(v)
-    print(repr(v))
+    # print(v.get_job_properties)
+    # print(v)
+    # print(repr(v))
+
+    d = [
+        {
+            "id": "128762270",
+            "name": "Python разработчик (Middle+/Senior)",
+            "salary": {"from": None, "to": 410000, "currency": "RUB"},
+            "url": "https://hh.ru/vacancy/128762270",
+            "description": "Опыт коммерческой разработки",
+        },
+        {
+            "id": "128762270",
+            "name": "Python разработчик (Middle+/Senior)",
+            "salary": {"from": 300000, "to": None, "currency": "RUB"},
+            "url": "https://hh.ru/vacancy/128762270",
+            "description": "Опыт коммерческой разработки",
+        },
+        {
+            "id": "128762270",
+            "name": "Python разработчик (Middle+/Senior)",
+            "salary": None,
+            "url": "https://hh.ru/vacancy/128762270",
+            "description": "Опыт коммерческой разработки",
+        },
+    ]
+
+    a = Vacancy.cast_to_object_list(d)
+    for x in a:
+        print(x.get_job_properties)

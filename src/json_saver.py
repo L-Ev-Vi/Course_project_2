@@ -49,10 +49,14 @@ class JSONSaver(FileSaver):
 
     def get_job_information(self, keyword: Any = None, minimum_wage: Any = None, maximum_salary: Any = None) -> list:
         """Метод получения данных из файла"""
-        # keyword - ключевое слово для поиска в названии вакансий и в описании к ним, если не передавать ключевое слово
+        # keyword - ключевое слово или несколько ключевых слов записанных через пробел,
+        # для поиска в названии вакансий и в описании к ним, если не передавать ключевое слово
         # то по умолчанию будет выводиться весь список содержащийся в файле
+
         # minimum_wage - не обязательный параметр обозначающий минимальную заработную плату
+
         # maximum_salary - не обязательный параметр обозначающий максимальную заработную плату
+
         result = []
         try:
             if keyword is not None:
@@ -88,20 +92,20 @@ class JSONSaver(FileSaver):
                         for vacancy in data:
                             if vacancy["salary"] != "Зарплата не указана":
                                 if not vacancy["salary"]["to"]:
-                                    if int(vacancy["salary"]["from"]) <= maximum_salary:
+                                    if vacancy["salary"]["from"] <= maximum_salary:
                                         result.append(vacancy)
                                 else:
-                                    if int(vacancy["salary"]["to"]) <= maximum_salary:
+                                    if vacancy["salary"]["to"] <= maximum_salary:
                                         result.append(vacancy)
                 else:
                     for vacancy in data:
                         if vacancy["salary"] != "Зарплата не указана":
                             if maximum_salary is None:
                                 if not vacancy["salary"]["from"]:
-                                    if int(vacancy["salary"]["to"]) >= minimum_wage:
+                                    if vacancy["salary"]["to"] >= minimum_wage:
                                         result.append(vacancy)
                                 else:
-                                    if int(vacancy["salary"]["from"]) >= minimum_wage:
+                                    if vacancy["salary"]["from"] >= minimum_wage:
                                         result.append(vacancy)
                             else:
                                 if minimum_wage > maximum_salary:
@@ -111,57 +115,64 @@ class JSONSaver(FileSaver):
                                         "значения максимальной оплаты."
                                     )
                                 if not vacancy["salary"]["from"]:
-                                    if maximum_salary >= int(vacancy["salary"]["to"]) >= minimum_wage:
+                                    if maximum_salary >= vacancy["salary"]["to"] >= minimum_wage:
                                         result.append(vacancy)
                                 elif not vacancy["salary"]["to"]:
-                                    if maximum_salary >= int(vacancy["salary"]["from"]) >= minimum_wage:
+                                    if maximum_salary >= vacancy["salary"]["from"] >= minimum_wage:
                                         result.append(vacancy)
                                 else:
-                                    if maximum_salary >= int(vacancy["salary"]["to"]) and minimum_wage <= int(
-                                        vacancy["salary"]["from"]
-                                    ):
+                                    if maximum_salary >= vacancy["salary"]["to"] and minimum_wage <= vacancy["salary"][
+                                        "from"]:
                                         result.append(vacancy)
             else:
+                words = keyword.split()
                 for vacancy in data:
-                    if keyword.lower() in vacancy["name"].lower() or keyword.lower() in vacancy["description"].lower():
-                        if minimum_wage is None:
-                            if maximum_salary is None:
-                                result.append(vacancy)
-                            else:
-                                if vacancy["salary"] != "Зарплата не указана":
-                                    if not vacancy["salary"]["to"]:
-                                        if int(vacancy["salary"]["from"]) <= maximum_salary:
-                                            result.append(vacancy)
+                    counter = 0
+                    for word in words:
+                        if (
+                                word.lower() in vacancy["name"].lower().split()
+                                or word.lower() in vacancy["description"].lower().split()
+                        ):
+                            counter += 1
+                            if counter == len(words):
+                                if minimum_wage is None:
+                                    if maximum_salary is None:
+                                        result.append(vacancy)
                                     else:
-                                        if int(vacancy["salary"]["to"]) <= maximum_salary:
-                                            result.append(vacancy)
-                        else:
-                            if vacancy["salary"] != "Зарплата не указана":
-                                if maximum_salary is None:
-                                    if not vacancy["salary"]["from"]:
-                                        if int(vacancy["salary"]["to"]) >= minimum_wage:
-                                            result.append(vacancy)
-                                    else:
-                                        if int(vacancy["salary"]["from"]) >= minimum_wage:
-                                            result.append(vacancy)
+                                        if vacancy["salary"] != "Зарплата не указана":
+                                            if not vacancy["salary"]["to"]:
+                                                if vacancy["salary"]["from"] <= maximum_salary:
+                                                    result.append(vacancy)
+                                            else:
+                                                if vacancy["salary"]["to"] <= maximum_salary:
+                                                    result.append(vacancy)
                                 else:
-                                    if minimum_wage > maximum_salary:
-                                        raise ValueError(
-                                            "Не корректно указанны суммы обозначающие границы оплаты труда, \n"
-                                            "значение минимальной оплаты не может быть больше "
-                                            "значения максимальной оплаты."
-                                        )
-                                    if not vacancy["salary"]["from"]:
-                                        if maximum_salary >= int(vacancy["salary"]["to"]) >= minimum_wage:
-                                            result.append(vacancy)
-                                    elif not vacancy["salary"]["to"]:
-                                        if maximum_salary >= int(vacancy["salary"]["from"]) >= minimum_wage:
-                                            result.append(vacancy)
-                                    else:
-                                        if maximum_salary >= int(vacancy["salary"]["to"]) and minimum_wage <= int(
-                                            vacancy["salary"]["from"]
-                                        ):
-                                            result.append(vacancy)
+                                    if vacancy["salary"] != "Зарплата не указана":
+                                        if maximum_salary is None:
+                                            if not vacancy["salary"]["from"]:
+                                                if vacancy["salary"]["to"] >= minimum_wage:
+                                                    result.append(vacancy)
+                                            else:
+                                                if vacancy["salary"]["from"] >= minimum_wage:
+                                                    result.append(vacancy)
+                                        else:
+                                            if minimum_wage > maximum_salary:
+                                                raise ValueError(
+                                                    "Не корректно указанны суммы обозначающие границы оплаты труда, \n"
+                                                    "значение минимальной оплаты не может быть больше "
+                                                    "значения максимальной оплаты."
+                                                )
+                                            if not vacancy["salary"]["from"]:
+                                                if maximum_salary >= int(vacancy["salary"]["to"]) >= minimum_wage:
+                                                    result.append(vacancy)
+                                            elif not vacancy["salary"]["to"]:
+                                                if maximum_salary >= int(vacancy["salary"]["from"]) >= minimum_wage:
+                                                    result.append(vacancy)
+                                            else:
+                                                if maximum_salary >= int(
+                                                        vacancy["salary"]["to"]
+                                                ) and minimum_wage <= int(vacancy["salary"]["from"]):
+                                                    result.append(vacancy)
         except TypeError as e:
             print(e)
         except ValueError as e:
@@ -203,11 +214,42 @@ class JSONSaver(FileSaver):
 if __name__ == "__main__":
     j = JSONSaver()
     v = Vacancy("Python Developer", "<https://hh.ru/vacancy/123456>", "Требования: опыт работы от 3 лет...")
-    # j.add_vacancy(v)
+    j.add_vacancy(v)
     v2 = Vacancy("Python Developer", "<https://hh.ru/vacancy/123456>", "Требования: опыт работы от 3 лет...")
-    # j.add_vacancy(v2)
+    j.add_vacancy(v2)
+    v3 = Vacancy("Python Developer Junior", "<https://hh.ru/vacancy/123456>", "Требования: опыт работы от 1 год...")
+    j.add_vacancy(v3)
 
-    j.delete_vacancy(v)
+    # j.delete_vacancy(v)
 
-    # n = j.get_job_information(minimum_wage=160, maximum_salary=150)
-    # print(n)
+    d = [
+        {
+            "id": "128762270",
+            "name": "Python разработчик (Middle+/Senior)",
+            "salary": {"from": None, "to": 410000, "currency": "RUB"},
+            "url": "https://hh.ru/vacancy/128762270",
+            "description": "Опыт коммерческой разработки 3",
+        },
+        {
+            "id": "128762270",
+            "name": "Python разработчик (Middle+/Senior)",
+            "salary": {"from": 300000, "to": None, "currency": "RUB"},
+            "url": "https://hh.ru/vacancy/128762270",
+            "description": "Опыт коммерческой разработки 2",
+        },
+        {
+            "id": "128762270",
+            "name": "Python разработчик (Middle+/Senior)",
+            "salary": None,
+            "url": "https://hh.ru/vacancy/128762270",
+            "description": "Опыт коммерческой разработки 1",
+        },
+    ]
+
+    a = Vacancy.cast_to_object_list(d)
+
+    for x in a:
+        j.add_vacancy(x)
+
+    n = j.get_job_information()
+    print(len(n))

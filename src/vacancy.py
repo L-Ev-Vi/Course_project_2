@@ -151,7 +151,7 @@ class Vacancy:
         return result
 
     def __get_minimum_wage(self) -> int:
-        """Методы сравнения вакансий между собой по зарплате"""
+        """Метод для определения минимальной предлагаемой оплаты труда объекта класса"""
         if self.__salary["salary"] == "Зарплата не указана":
             salary = 0
         elif not self.__salary["salary"]["from"]:
@@ -166,8 +166,9 @@ class Vacancy:
                 salary = currency.get_currency_exchange(salary)
         return salary
 
-    def __lt__(self, other: object) -> bool:
-        """Метод для операции сравнения «меньше»"""
+    @classmethod
+    def __get_minimum_other(cls, other: object) -> int:
+        """Метод для определения минимальной предлагаемой оплаты труда сравниваемого объекта класса"""
         if not isinstance(other, Vacancy):
             raise TypeError("Переданный объект не является объектом класса 'Vacancy'")
         if other.__salary["salary"] == "Зарплата не указана":
@@ -182,43 +183,17 @@ class Vacancy:
             if other.__salary["salary"]["currency"] != "RUB":
                 currency = CurrencyExchange(other.__salary["salary"]["currency"])
                 salary = currency.get_currency_exchange(salary)
+        return salary
+
+    def __lt__(self, other: object) -> bool:
+        """Метод для операции сравнения «меньше»"""
+        salary = self.__get_minimum_other(other)
         return self.__get_minimum_wage() < salary
 
     def __eq__(self, other: object) -> bool:
         """Метод для операции сравнения «меньше или равно»"""
-        if not isinstance(other, Vacancy):
-            raise TypeError("Переданный объект не является объектом класса 'Vacancy'")
-        if other.__salary["salary"] == "Зарплата не указана":
-            salary = 0
-        elif not other.__salary["salary"]["from"]:
-            salary = other.__salary["salary"]["to"]
-            if other.__salary["salary"]["currency"] != "RUB":
-                currency = CurrencyExchange(other.__salary["salary"]["currency"])
-                salary = currency.get_currency_exchange(salary)
-        else:
-            salary = other.__salary["salary"]["from"]
-            if other.__salary["salary"]["currency"] != "RUB":
-                currency = CurrencyExchange(other.__salary["salary"]["currency"])
-                salary = currency.get_currency_exchange(salary)
+        salary = self.__get_minimum_other(other)
         return self.__get_minimum_wage() == salary
-
-    def __gt__(self, other: object) -> bool:
-        """Метод для операции сравнения «больше»"""
-        if not isinstance(other, Vacancy):
-            raise TypeError("Переданный объект не является объектом класса 'Vacancy'")
-        if other.__salary["salary"] == "Зарплата не указана":
-            salary = 0
-        elif not other.__salary["salary"]["from"]:
-            salary = other.__salary["salary"]["to"]
-            if other.__salary["salary"]["currency"] != "RUB":
-                currency = CurrencyExchange(other.__salary["salary"]["currency"])
-                salary = currency.get_currency_exchange(salary)
-        else:
-            salary = other.__salary["salary"]["from"]
-            if other.__salary["salary"]["currency"] != "RUB":
-                currency = CurrencyExchange(other.__salary["salary"]["currency"])
-                salary = currency.get_currency_exchange(salary)
-        return self.__get_minimum_wage() > salary
 
     @property
     def get_job_properties(self) -> dict:
@@ -282,7 +257,3 @@ if __name__ == "__main__":
             "description": "Опыт коммерческой разработки",
         },
     ]
-
-    a = Vacancy.cast_to_object_list(d)
-    for x in a:
-        print(x.get_job_properties)

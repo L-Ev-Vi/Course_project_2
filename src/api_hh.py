@@ -1,6 +1,7 @@
 from typing import Any
 
 import requests
+from accessify import private
 
 from src.api_request_error import ApiRequestError, ApiRequestError400, ApiRequestError500
 from src.base_parser import Parser
@@ -10,22 +11,24 @@ class HH(Parser):
     """Класс для работы с API HeadHunter"""
 
     __vacancies: list
-
-    __url: str = "https://api.hh.ru/vacancies"
-    __params: dict[str, Any] = {"page": 0, "per_page": 0, "text": "", "area": 1, "period": 1, "search_field": "name"}
-    __headers: dict[str, str] = {"User-Agent": "HH-User-Agent"}
+    __url: str
+    __params: dict[str, Any]
+    __headers: dict[str, str]
 
     def __init__(self) -> None:
         """Конструктор объекта класса"""
+        self.__url = "https://api.hh.ru/vacancies"
+        self.__params = {"page": 0, "per_page": 0, "text": "", "area": 1, "period": 1, "search_field": "name"}
+        self.__headers = {"User-Agent": "HH-User-Agent"}
         self.__vacancies = []
 
-    @classmethod
-    def __connecting_to_api(cls) -> list[Any]:
+    @private
+    def connecting_to_api(self) -> list[Any]:
         """Метод подключения к API HH.ru для получать вакансии"""
         vacancies = []
         try:
             while True:
-                response = requests.get(cls.__url, params=cls.__params)
+                response = requests.get(self.__url, params=self.__params)
                 if response.status_code >= 500:
                     raise ApiRequestError500
                 elif response.status_code >= 400:
@@ -34,10 +37,10 @@ class HH(Parser):
                     raise ApiRequestError
                 result = response.json()
                 vacancies.extend(result["items"])
-                if result["pages"] == cls.__params["page"]:
+                if result["pages"] == self.__params["page"]:
                     break
                 else:
-                    cls.__params["page"] += 1
+                    self.__params["page"] += 1
         except ApiRequestError500 as e:
             print(e)
             return vacancies
@@ -57,9 +60,11 @@ class HH(Parser):
                 raise TypeError
             self.__params["text"] = keyword
             self.__params["per_page"] = per_page
-            vacancies = self.__connecting_to_api()
+            vacancies = self.connecting_to_api()
             for res in vacancies:
                 if res["salary"]:
+                    if res["salary"]["currency"] == "RUR":
+                        res["salary"]["currency"] = "RUB"
                     result.append(
                         {
                             "id": res["id"],
@@ -91,7 +96,8 @@ class HH(Parser):
 
 if __name__ == "__main__":
     a = HH()
-    print(a.get_vacancies("python"))
+    x = a.get_vacancies("python")
+    print(*x, sep="\n")
 
 # """
 # {'id': '128762270', 'name': 'Python разработчик (Middle+/Senior)',

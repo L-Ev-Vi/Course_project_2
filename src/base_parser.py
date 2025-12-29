@@ -5,9 +5,8 @@ from typing import Any
 class Parser(ABC):
     """Абстрактный класс для работы с API сервисами"""
 
-    @classmethod
     @abstractmethod
-    def __connecting_to_api(cls) -> list[Any]:
+    def connecting_to_api(self) -> list[Any]:
         """Метод подключения к API в абстрактном классе"""
 
     @abstractmethod

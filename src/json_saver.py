@@ -47,15 +47,17 @@ class JSONSaver(FileSaver):
         except OverflowError as e:
             print(e)
 
-    def get_job_information(self, keyword: Any = None, minimum_wage: Any = None, maximum_salary: Any = None) -> list:
+    def get_job_information(
+        self, keyword: Any = None, salary_range_min: Any = None, salary_range_max: Any = None
+    ) -> list:
         """Метод получения данных из файла"""
         # keyword - ключевое слово или несколько ключевых слов записанных через пробел,
         # для поиска в названии вакансий и в описании к ним, если не передавать ключевое слово
         # то по умолчанию будет выводиться весь список содержащийся в файле
 
-        # minimum_wage - не обязательный параметр обозначающий минимальную заработную плату
+        # salary_range_min - не обязательный параметр обозначающий минимальную заработную плату
 
-        # maximum_salary - не обязательный параметр обозначающий максимальную заработную плату
+        # salary_range_max - не обязательный параметр обозначающий максимальную заработную плату
 
         result = []
         try:
@@ -66,63 +68,65 @@ class JSONSaver(FileSaver):
                         "Если не указывать ключевое слово, \n"
                         "то по умолчанию результатом будет содержимое всего файла."
                     )
-            if minimum_wage is not None:
-                if type(minimum_wage) is not int:
+            if salary_range_min is not None:
+                if type(salary_range_min) is not int:
                     raise TypeError(
                         "Не обязательный параметр обозначающий минимальную заработную плату, \n"
                         "должен быть целым числом и иметь тип 'int'."
                     )
-                if minimum_wage < 0:
+                if salary_range_min < 0:
                     raise ValueError("Сумма заработной платы не может быть отрицательной.")
-            if maximum_salary is not None:
-                if type(maximum_salary) is not int:
+            if salary_range_max is not None:
+                if type(salary_range_max) is not int:
                     raise TypeError(
                         "Не обязательный параметр обозначающий максимальную заработную плату, \n"
                         "должен быть целым числом и иметь тип 'int'."
                     )
-                if maximum_salary < 0:
+                if salary_range_max < 0:
                     raise ValueError("Сумма заработной платы не может быть отрицательной.")
             with open(self.__path_file, "r", encoding="utf=8") as file:
                 data = json.load(file)
             if keyword is None:
-                if minimum_wage is None:
-                    if maximum_salary is None:
+                if salary_range_min is None:
+                    if salary_range_max is None:
                         result = data
                     else:
                         for vacancy in data:
                             if vacancy["salary"] != "Зарплата не указана":
                                 if not vacancy["salary"]["to"]:
-                                    if vacancy["salary"]["from"] <= maximum_salary:
+                                    if vacancy["salary"]["from"] <= salary_range_max:
                                         result.append(vacancy)
                                 else:
-                                    if vacancy["salary"]["to"] <= maximum_salary:
+                                    if vacancy["salary"]["to"] <= salary_range_max:
                                         result.append(vacancy)
                 else:
                     for vacancy in data:
                         if vacancy["salary"] != "Зарплата не указана":
-                            if maximum_salary is None:
+                            if salary_range_max is None:
                                 if not vacancy["salary"]["from"]:
-                                    if vacancy["salary"]["to"] >= minimum_wage:
+                                    if vacancy["salary"]["to"] >= salary_range_min:
                                         result.append(vacancy)
                                 else:
-                                    if vacancy["salary"]["from"] >= minimum_wage:
+                                    if vacancy["salary"]["from"] >= salary_range_min:
                                         result.append(vacancy)
                             else:
-                                if minimum_wage > maximum_salary:
+                                if salary_range_min > salary_range_max:
                                     raise ValueError(
                                         "Не корректно указанны суммы обозначающие границы оплаты труда, \n"
                                         "значение минимальной оплаты не может быть больше "
                                         "значения максимальной оплаты."
                                     )
                                 if not vacancy["salary"]["from"]:
-                                    if maximum_salary >= vacancy["salary"]["to"] >= minimum_wage:
+                                    if salary_range_max >= vacancy["salary"]["to"] >= salary_range_min:
                                         result.append(vacancy)
                                 elif not vacancy["salary"]["to"]:
-                                    if maximum_salary >= vacancy["salary"]["from"] >= minimum_wage:
+                                    if salary_range_max >= vacancy["salary"]["from"] >= salary_range_min:
                                         result.append(vacancy)
                                 else:
-                                    if maximum_salary >= vacancy["salary"]["to"] and minimum_wage <= vacancy["salary"][
-                                        "from"]:
+                                    if (
+                                        salary_range_max >= vacancy["salary"]["to"]
+                                        and salary_range_min <= vacancy["salary"]["from"]
+                                    ):
                                         result.append(vacancy)
             else:
                 words = keyword.split()
@@ -130,48 +134,56 @@ class JSONSaver(FileSaver):
                     counter = 0
                     for word in words:
                         if (
-                                word.lower() in vacancy["name"].lower().split()
-                                or word.lower() in vacancy["description"].lower().split()
+                            word.lower() in vacancy["name"].lower().split()
+                            or word.lower() in vacancy["description"].lower().split()
                         ):
                             counter += 1
                             if counter == len(words):
-                                if minimum_wage is None:
-                                    if maximum_salary is None:
+                                if salary_range_min is None:
+                                    if salary_range_max is None:
                                         result.append(vacancy)
                                     else:
                                         if vacancy["salary"] != "Зарплата не указана":
                                             if not vacancy["salary"]["to"]:
-                                                if vacancy["salary"]["from"] <= maximum_salary:
+                                                if vacancy["salary"]["from"] <= salary_range_max:
                                                     result.append(vacancy)
                                             else:
-                                                if vacancy["salary"]["to"] <= maximum_salary:
+                                                if vacancy["salary"]["to"] <= salary_range_max:
                                                     result.append(vacancy)
                                 else:
                                     if vacancy["salary"] != "Зарплата не указана":
-                                        if maximum_salary is None:
+                                        if salary_range_max is None:
                                             if not vacancy["salary"]["from"]:
-                                                if vacancy["salary"]["to"] >= minimum_wage:
+                                                if vacancy["salary"]["to"] >= salary_range_min:
                                                     result.append(vacancy)
                                             else:
-                                                if vacancy["salary"]["from"] >= minimum_wage:
+                                                if vacancy["salary"]["from"] >= salary_range_min:
                                                     result.append(vacancy)
                                         else:
-                                            if minimum_wage > maximum_salary:
+                                            if salary_range_min > salary_range_max:
                                                 raise ValueError(
                                                     "Не корректно указанны суммы обозначающие границы оплаты труда, \n"
                                                     "значение минимальной оплаты не может быть больше "
                                                     "значения максимальной оплаты."
                                                 )
                                             if not vacancy["salary"]["from"]:
-                                                if maximum_salary >= int(vacancy["salary"]["to"]) >= minimum_wage:
+                                                if (
+                                                    salary_range_max
+                                                    >= int(vacancy["salary"]["to"])
+                                                    >= salary_range_min
+                                                ):
                                                     result.append(vacancy)
                                             elif not vacancy["salary"]["to"]:
-                                                if maximum_salary >= int(vacancy["salary"]["from"]) >= minimum_wage:
+                                                if (
+                                                    salary_range_max
+                                                    >= int(vacancy["salary"]["from"])
+                                                    >= salary_range_min
+                                                ):
                                                     result.append(vacancy)
                                             else:
-                                                if maximum_salary >= int(
-                                                        vacancy["salary"]["to"]
-                                                ) and minimum_wage <= int(vacancy["salary"]["from"]):
+                                                if salary_range_max >= int(
+                                                    vacancy["salary"]["to"]
+                                                ) and salary_range_min <= int(vacancy["salary"]["from"]):
                                                     result.append(vacancy)
         except TypeError as e:
             print(e)
@@ -207,6 +219,22 @@ class JSONSaver(FileSaver):
             print("Ошибка: не возможно декодировать JSON-данные")
         except ValueError as e:
             print(e)
+        except Exception as e:
+            print(e)
+
+    def delete_content(self) -> None:
+        """Метод удаления всех данных из файла"""
+        try:
+            if not os.path.getsize(self.__path_file):
+                raise FileNotFoundError("Не возможно выполнить удаление объекта из пустого файла")
+            else:
+                with open(self.__path_file, "w", encoding="utf=8") as file:
+                    json.dump([], file, ensure_ascii=False, indent=4)
+                print("Выполнена очистка файла!")
+        except FileNotFoundError as e:
+            print(e)
+        except JSONDecodeError:
+            print("Ошибка: не возможно декодировать JSON-данные")
         except Exception as e:
             print(e)
 

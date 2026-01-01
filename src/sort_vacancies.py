@@ -38,33 +38,3 @@ def sort_vacancies(ranged_vacancies: list, reverse: bool = True) -> list:
     except ValueError as e:
         print(e)
     return sorting_vacancies_by_salary
-
-
-if __name__ == "__main__":
-    data = [
-        {
-            "id": "128762270",
-            "name": "Python разработчик (Middle+/Senior)",
-            "salary": {"from": 300000, "to": None, "currency": "USD"},
-            "alternate_url": "https://hh.ru/vacancy/128762270",
-            "relations": [],
-            "snippet": {"requirement": "Опыт коммерческой разработки"},
-        },
-        {
-            "id": "128762270",
-            "name": "Python разработчик (Middle+/Senior)",
-            "salary": {"from": None, "to": 410000, "currency": "RUB"},
-            "alternate_url": "https://hh.ru/vacancy/128762270",
-            "relations": [],
-            "snippet": {"requirement": "Опыт коммерческой разработки"},
-        },
-        {
-            "id": "128762270",
-            "name": "Python разработчик (Middle+/Senior)",
-            "salary": "Зарплата не указана",
-            "alternate_url": "https://hh.ru/vacancy/128762270",
-            "relations": [],
-            "snippet": {"requirement": "Опыт коммерческой разработки"},
-        },
-    ]
-    print(sort_vacancies(data))

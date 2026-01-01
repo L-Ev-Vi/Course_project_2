@@ -4,15 +4,18 @@ from json import JSONDecodeError
 from typing import Any
 
 from src.base_file_saver import FileSaver
+from src.currency_exchange import CurrencyExchange
 from src.vacancy import Vacancy
 
 
 class JSONSaver(FileSaver):
     """Класс для работы с json-файлом"""
 
+    __BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
     def __init__(self, name_file: str = "job_information") -> None:
         """Конструктор объекта класса"""
-        path = os.path.join(os.path.dirname(__file__)[:-3], "data", f"{name_file}.json")
+        path = os.path.join(self.__BASE_DIR, "data", f"{name_file}.json")
         if not os.path.exists(path):
             file = os.open(path, os.O_CREAT)
             os.close(file)
@@ -23,7 +26,7 @@ class JSONSaver(FileSaver):
         """Метод добавления данных в файл"""
         try:
             if not isinstance(vacancy, Vacancy):
-                raise TypeError(f"Добавляемый объект реализован от {vacancy}, а не от класса Vacancy(Вакансия)!")
+                raise TypeError(f"Добавляемый объект реализован от {type(vacancy)}, а не от класса Vacancy(Вакансия)!")
             if not os.path.getsize(self.__path_file):
                 data = [vacancy.get_job_properties]
                 with open(self.__path_file, "a", encoding="utf=8") as file:
@@ -34,7 +37,7 @@ class JSONSaver(FileSaver):
                 value_ = [tuple(entity.values()) for entity in data]
                 if tuple(vacancy.get_job_properties.values()) in value_:
                     raise OverflowError(
-                        f"В файл не сохраняются дубликаты вакансий, " f"{str(vacancy)} уже содержится в файле."
+                        f"В файл не сохраняются дубликаты вакансий, {str(vacancy)} уже содержится в файле."
                     )
                 else:
                     data.append(vacancy.get_job_properties)
@@ -53,11 +56,11 @@ class JSONSaver(FileSaver):
         """Метод получения данных из файла"""
         # keyword - ключевое слово или несколько ключевых слов записанных через пробел,
         # для поиска в названии вакансий и в описании к ним, если не передавать ключевое слово
-        # то по умолчанию будет выводиться весь список содержащийся в файле
+        # то по умолчанию будет выводиться весь список содержащийся в файле.
 
-        # salary_range_min - не обязательный параметр обозначающий минимальную заработную плату
+        # salary_range_min - не обязательный параметр обозначающий минимальную заработную плату.
 
-        # salary_range_max - не обязательный параметр обозначающий максимальную заработную плату
+        # salary_range_max - не обязательный параметр обозначающий максимальную заработную плату.
 
         result = []
         try:
@@ -69,21 +72,28 @@ class JSONSaver(FileSaver):
                         "то по умолчанию результатом будет содержимое всего файла."
                     )
             if salary_range_min is not None:
-                if type(salary_range_min) is not int:
+                if not isinstance(salary_range_min, int):
                     raise TypeError(
                         "Не обязательный параметр обозначающий минимальную заработную плату, \n"
                         "должен быть целым числом и иметь тип 'int'."
                     )
-                if salary_range_min < 0:
+                elif salary_range_min < 0:
                     raise ValueError("Сумма заработной платы не может быть отрицательной.")
             if salary_range_max is not None:
-                if type(salary_range_max) is not int:
+                if not isinstance(salary_range_max, int):
                     raise TypeError(
                         "Не обязательный параметр обозначающий максимальную заработную плату, \n"
                         "должен быть целым числом и иметь тип 'int'."
                     )
-                if salary_range_max < 0:
+                elif salary_range_max < 0:
                     raise ValueError("Сумма заработной платы не может быть отрицательной.")
+            if isinstance(salary_range_min, int) and isinstance(salary_range_max, int):
+                if salary_range_min > salary_range_max:
+                    raise ValueError(
+                        "Не корректно указанны суммы обозначающие границы оплаты труда, \n"
+                        "значение минимальной оплаты не может быть больше "
+                        "значения максимальной оплаты."
+                    )
             with open(self.__path_file, "r", encoding="utf=8") as file:
                 data = json.load(file)
             if keyword is None:
@@ -94,40 +104,87 @@ class JSONSaver(FileSaver):
                         for vacancy in data:
                             if vacancy["salary"] != "Зарплата не указана":
                                 if not vacancy["salary"]["to"]:
-                                    if vacancy["salary"]["from"] <= salary_range_max:
-                                        result.append(vacancy)
+                                    if vacancy["salary"]["currency"] != "RUB":
+                                        currency = CurrencyExchange(vacancy["salary"]["currency"])
+                                        if (
+                                            currency.get_currency_exchange(vacancy["salary"]["from"])
+                                            <= salary_range_max
+                                        ):
+                                            result.append(vacancy)
+                                    else:
+                                        if vacancy["salary"]["from"] <= salary_range_max:
+                                            result.append(vacancy)
                                 else:
-                                    if vacancy["salary"]["to"] <= salary_range_max:
-                                        result.append(vacancy)
+                                    if vacancy["salary"]["currency"] != "RUB":
+                                        currency = CurrencyExchange(vacancy["salary"]["currency"])
+                                        if currency.get_currency_exchange(vacancy["salary"]["to"]) <= salary_range_max:
+                                            result.append(vacancy)
+                                    else:
+                                        if vacancy["salary"]["to"] <= salary_range_max:
+                                            result.append(vacancy)
                 else:
                     for vacancy in data:
                         if vacancy["salary"] != "Зарплата не указана":
                             if salary_range_max is None:
                                 if not vacancy["salary"]["from"]:
-                                    if vacancy["salary"]["to"] >= salary_range_min:
-                                        result.append(vacancy)
+                                    if vacancy["salary"]["currency"] != "RUB":
+                                        currency = CurrencyExchange(vacancy["salary"]["currency"])
+                                        if currency.get_currency_exchange(vacancy["salary"]["to"]) >= salary_range_min:
+                                            result.append(vacancy)
+                                    else:
+                                        if vacancy["salary"]["to"] >= salary_range_min:
+                                            result.append(vacancy)
                                 else:
-                                    if vacancy["salary"]["from"] >= salary_range_min:
-                                        result.append(vacancy)
+                                    if vacancy["salary"]["currency"] != "RUB":
+                                        currency = CurrencyExchange(vacancy["salary"]["currency"])
+                                        if (
+                                            currency.get_currency_exchange(vacancy["salary"]["from"])
+                                            >= salary_range_min
+                                        ):
+                                            result.append(vacancy)
+                                    else:
+                                        if vacancy["salary"]["from"] >= salary_range_min:
+                                            result.append(vacancy)
                             else:
-                                if salary_range_min > salary_range_max:
-                                    raise ValueError(
-                                        "Не корректно указанны суммы обозначающие границы оплаты труда, \n"
-                                        "значение минимальной оплаты не может быть больше "
-                                        "значения максимальной оплаты."
-                                    )
                                 if not vacancy["salary"]["from"]:
-                                    if salary_range_max >= vacancy["salary"]["to"] >= salary_range_min:
-                                        result.append(vacancy)
+                                    if vacancy["salary"]["currency"] != "RUB":
+                                        currency = CurrencyExchange(vacancy["salary"]["currency"])
+                                        if (
+                                            salary_range_max
+                                            >= currency.get_currency_exchange(vacancy["salary"]["to"])
+                                            >= salary_range_min
+                                        ):
+                                            result.append(vacancy)
+                                    else:
+                                        if salary_range_max >= vacancy["salary"]["to"] >= salary_range_min:
+                                            result.append(vacancy)
                                 elif not vacancy["salary"]["to"]:
-                                    if salary_range_max >= vacancy["salary"]["from"] >= salary_range_min:
-                                        result.append(vacancy)
+                                    if vacancy["salary"]["currency"] != "RUB":
+                                        currency = CurrencyExchange(vacancy["salary"]["currency"])
+                                        if (
+                                            salary_range_max
+                                            >= currency.get_currency_exchange(vacancy["salary"]["from"])
+                                            >= salary_range_min
+                                        ):
+                                            result.append(vacancy)
+                                    else:
+                                        if salary_range_max >= vacancy["salary"]["from"] >= salary_range_min:
+                                            result.append(vacancy)
                                 else:
-                                    if (
-                                        salary_range_max >= vacancy["salary"]["to"]
-                                        and salary_range_min <= vacancy["salary"]["from"]
-                                    ):
-                                        result.append(vacancy)
+                                    if vacancy["salary"]["currency"] != "RUB":
+                                        currency = CurrencyExchange(vacancy["salary"]["currency"])
+                                        if salary_range_max >= currency.get_currency_exchange(
+                                            vacancy["salary"]["to"]
+                                        ) and salary_range_min <= currency.get_currency_exchange(
+                                            vacancy["salary"]["from"]
+                                        ):
+                                            result.append(vacancy)
+                                    else:
+                                        if (
+                                            salary_range_max >= vacancy["salary"]["to"]
+                                            and salary_range_min <= vacancy["salary"]["from"]
+                                        ):
+                                            result.append(vacancy)
             else:
                 words = keyword.split()
                 for vacancy in data:
@@ -145,46 +202,96 @@ class JSONSaver(FileSaver):
                                     else:
                                         if vacancy["salary"] != "Зарплата не указана":
                                             if not vacancy["salary"]["to"]:
-                                                if vacancy["salary"]["from"] <= salary_range_max:
-                                                    result.append(vacancy)
+                                                if vacancy["salary"]["currency"] != "RUB":
+                                                    currency = CurrencyExchange(vacancy["salary"]["currency"])
+                                                    if (
+                                                        currency.get_currency_exchange(vacancy["salary"]["from"])
+                                                        <= salary_range_max
+                                                    ):
+                                                        result.append(vacancy)
+                                                else:
+                                                    if vacancy["salary"]["from"] <= salary_range_max:
+                                                        result.append(vacancy)
                                             else:
-                                                if vacancy["salary"]["to"] <= salary_range_max:
-                                                    result.append(vacancy)
+                                                if vacancy["salary"]["currency"] != "RUB":
+                                                    currency = CurrencyExchange(vacancy["salary"]["currency"])
+                                                    if (
+                                                        currency.get_currency_exchange(vacancy["salary"]["to"])
+                                                        <= salary_range_max
+                                                    ):
+                                                        result.append(vacancy)
+                                                else:
+                                                    if vacancy["salary"]["to"] <= salary_range_max:
+                                                        result.append(vacancy)
                                 else:
                                     if vacancy["salary"] != "Зарплата не указана":
                                         if salary_range_max is None:
                                             if not vacancy["salary"]["from"]:
-                                                if vacancy["salary"]["to"] >= salary_range_min:
-                                                    result.append(vacancy)
+                                                if vacancy["salary"]["currency"] != "RUB":
+                                                    currency = CurrencyExchange(vacancy["salary"]["currency"])
+                                                    if (
+                                                        currency.get_currency_exchange(vacancy["salary"]["to"])
+                                                        >= salary_range_min
+                                                    ):
+                                                        result.append(vacancy)
+                                                else:
+                                                    if vacancy["salary"]["to"] >= salary_range_min:
+                                                        result.append(vacancy)
                                             else:
-                                                if vacancy["salary"]["from"] >= salary_range_min:
-                                                    result.append(vacancy)
+                                                if vacancy["salary"]["currency"] != "RUB":
+                                                    currency = CurrencyExchange(vacancy["salary"]["currency"])
+                                                    if (
+                                                        currency.get_currency_exchange(vacancy["salary"]["from"])
+                                                        >= salary_range_min
+                                                    ):
+                                                        result.append(vacancy)
+                                                else:
+                                                    if vacancy["salary"]["from"] >= salary_range_min:
+                                                        result.append(vacancy)
                                         else:
-                                            if salary_range_min > salary_range_max:
-                                                raise ValueError(
-                                                    "Не корректно указанны суммы обозначающие границы оплаты труда, \n"
-                                                    "значение минимальной оплаты не может быть больше "
-                                                    "значения максимальной оплаты."
-                                                )
                                             if not vacancy["salary"]["from"]:
-                                                if (
-                                                    salary_range_max
-                                                    >= int(vacancy["salary"]["to"])
-                                                    >= salary_range_min
-                                                ):
-                                                    result.append(vacancy)
+                                                if vacancy["salary"]["currency"] != "RUB":
+                                                    currency = CurrencyExchange(vacancy["salary"]["currency"])
+                                                    if (
+                                                        salary_range_max
+                                                        >= currency.get_currency_exchange(vacancy["salary"]["to"])
+                                                        >= salary_range_min
+                                                    ):
+                                                        result.append(vacancy)
+                                                else:
+                                                    if salary_range_max >= vacancy["salary"]["to"] >= salary_range_min:
+                                                        result.append(vacancy)
                                             elif not vacancy["salary"]["to"]:
-                                                if (
-                                                    salary_range_max
-                                                    >= int(vacancy["salary"]["from"])
-                                                    >= salary_range_min
-                                                ):
-                                                    result.append(vacancy)
+                                                if vacancy["salary"]["currency"] != "RUB":
+                                                    currency = CurrencyExchange(vacancy["salary"]["currency"])
+                                                    if (
+                                                        salary_range_max
+                                                        >= currency.get_currency_exchange(vacancy["salary"]["from"])
+                                                        >= salary_range_min
+                                                    ):
+                                                        result.append(vacancy)
+                                                else:
+                                                    if (
+                                                        salary_range_max
+                                                        >= vacancy["salary"]["from"]
+                                                        >= salary_range_min
+                                                    ):
+                                                        result.append(vacancy)
                                             else:
-                                                if salary_range_max >= int(
-                                                    vacancy["salary"]["to"]
-                                                ) and salary_range_min <= int(vacancy["salary"]["from"]):
-                                                    result.append(vacancy)
+                                                if vacancy["salary"]["currency"] != "RUB":
+                                                    currency = CurrencyExchange(vacancy["salary"]["currency"])
+                                                    if salary_range_max >= currency.get_currency_exchange(
+                                                        vacancy["salary"]["to"]
+                                                    ) and salary_range_min <= currency.get_currency_exchange(
+                                                        vacancy["salary"]["from"]
+                                                    ):
+                                                        result.append(vacancy)
+                                                else:
+                                                    if (
+                                                        salary_range_max >= vacancy["salary"]["to"]
+                                                        and salary_range_min <= vacancy["salary"]["from"]
+                                                    ):
+                                                        result.append(vacancy)
         except TypeError as e:
             print(e)
         except ValueError as e:
@@ -194,13 +301,17 @@ class JSONSaver(FileSaver):
     def delete_vacancy(self, vacancy: object) -> None:
         """Метод удаления данных из файла"""
         try:
+            if not os.path.getsize(self.__path_file):
+                raise FileNotFoundError("Не возможно выполнить удаление объекта из пустого файла")
+            with open(self.__path_file, "r", encoding="utf=8") as file:
+                data = json.load(file)
+            if len(data) == 0:
+                raise FileNotFoundError("Не возможно выполнить удаление объекта из пустого файла")
             if not isinstance(vacancy, Vacancy):
                 raise TypeError(
                     f"Не возможно выполнить удаление, "
-                    f"объект реализован от {vacancy}, а не от класса Vacancy(Вакансия)!"
+                    f"объект реализован от {type(vacancy)}, а не от класса Vacancy(Вакансия)!"
                 )
-            elif not os.path.getsize(self.__path_file):
-                raise FileNotFoundError("Не возможно выполнить удаление объекта из пустого файла")
             else:
                 with open(self.__path_file, "r", encoding="utf=8") as file:
                     data = json.load(file)
@@ -226,7 +337,11 @@ class JSONSaver(FileSaver):
         """Метод удаления всех данных из файла"""
         try:
             if not os.path.getsize(self.__path_file):
-                raise FileNotFoundError("Не возможно выполнить удаление объекта из пустого файла")
+                raise FileNotFoundError("Не возможно выполнить удаление объекта из пустого файла!")
+            with open(self.__path_file, "r", encoding="utf=8") as file:
+                data = json.load(file)
+            if len(data) == 0:
+                raise FileNotFoundError("Не возможно выполнить удаление объекта из пустого файла!")
             else:
                 with open(self.__path_file, "w", encoding="utf=8") as file:
                     json.dump([], file, ensure_ascii=False, indent=4)
@@ -237,47 +352,3 @@ class JSONSaver(FileSaver):
             print("Ошибка: не возможно декодировать JSON-данные")
         except Exception as e:
             print(e)
-
-
-if __name__ == "__main__":
-    j = JSONSaver()
-    v = Vacancy("Python Developer", "<https://hh.ru/vacancy/123456>", "Требования: опыт работы от 3 лет...")
-    j.add_vacancy(v)
-    v2 = Vacancy("Python Developer", "<https://hh.ru/vacancy/123456>", "Требования: опыт работы от 3 лет...")
-    j.add_vacancy(v2)
-    v3 = Vacancy("Python Developer Junior", "<https://hh.ru/vacancy/123456>", "Требования: опыт работы от 1 год...")
-    j.add_vacancy(v3)
-
-    # j.delete_vacancy(v)
-
-    d = [
-        {
-            "id": "128762270",
-            "name": "Python разработчик (Middle+/Senior)",
-            "salary": {"from": None, "to": 410000, "currency": "RUB"},
-            "url": "https://hh.ru/vacancy/128762270",
-            "description": "Опыт коммерческой разработки 3",
-        },
-        {
-            "id": "128762270",
-            "name": "Python разработчик (Middle+/Senior)",
-            "salary": {"from": 300000, "to": None, "currency": "RUB"},
-            "url": "https://hh.ru/vacancy/128762270",
-            "description": "Опыт коммерческой разработки 2",
-        },
-        {
-            "id": "128762270",
-            "name": "Python разработчик (Middle+/Senior)",
-            "salary": None,
-            "url": "https://hh.ru/vacancy/128762270",
-            "description": "Опыт коммерческой разработки 1",
-        },
-    ]
-
-    a = Vacancy.cast_to_object_list(d)
-
-    for x in a:
-        j.add_vacancy(x)
-
-    n = j.get_job_information()
-    print(len(n))

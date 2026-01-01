@@ -16,42 +16,51 @@ def user_interface() -> None:
     """Функция для взаимодействия с пользователем"""
     print(GreetingTimeDay.get_a_greeting())
     while True:
-        action = input("Выберите возможные действия\n"
-                       "1 — Создать вакансию\n"
-                       "2 — Выполнить поиск по вакансиям\n"
-                       "3 — Просмотреть файлы с вакансиями\n"
-                       "4 — Выйти из программы\n"
-                       "->")
+        action = input(
+            "Выберите возможные действия\n"
+            "1 — Создать вакансию\n"
+            "2 — Выполнить поиск по вакансиям\n"
+            "3 — Просмотреть файлы с вакансиями\n"
+            "4 — Выйти из программы\n"
+            "->"
+        )
         if action == "1":
-            print("Для создания вакансии необходимо указать следующие параметры: название вакансии*, "
-                  "ссылку на вакансию*, \n"
-                  "заработную плату (значение заработной платы можно оставить пустым), описание вакансии*\n "
-                  "[параметры обязательные для заполнения отмечены *].\n"
-                  "Пример заполнения данных при создании вакансии\n"
-                  "(Python Developer, <https://hh.ru/vacancy/123456>, 100 000-150 000 , "
-                  "Требования: опыт работы от 3 лет)\n")
+            print(
+                "Для создания вакансии необходимо указать следующие параметры: название вакансии*, "
+                "ссылку на вакансию*, \n"
+                "заработную плату (значение заработной платы можно оставить пустым), описание вакансии*\n "
+                "[параметры обязательные для заполнения отмечены *].\n"
+                "Пример заполнения данных при создании вакансии\n"
+                "(Python Developer, <https://hh.ru/vacancy/123456>, 100 000-150 000 , "
+                "Требования: опыт работы от 3 лет)\n"
+            )
             job_data = FillingInJobInformation()
             vacancy1 = Vacancy(*job_data.getting_data())
             print(f"Создана вакансия {vacancy1.get_job_properties["name"]} c ID-{vacancy1.get_job_properties["id"]}")
 
-            save_request = input("Сохранить созданную вакансию в файл '.json'?\n"
-                                 "Y = 'yes'/ N = 'no'->")
+            save_request = input("Сохранить созданную вакансию в файл '.json'?\n" "Y = 'yes'/ N = 'no'->")
             if save_request.lower() == "y":
                 if len(os.listdir("data")) == 0:
-                    file_to_save = input("Введите имя файл для сохранения созданной вакансии \n"
-                                         "или оставите значение пустым (будет использоваться файл по умолчанию 'job_information')\n"
-                                         "->")
+                    file_to_save = input(
+                        "Введите имя файл для сохранения созданной вакансии \n"
+                        "или оставите значение пустым (будет использоваться файл по умолчанию 'job_information')\n"
+                        "->"
+                    )
                     if file_to_save:
                         json_saver = JSONSaver(file_to_save)
                     else:
                         json_saver = JSONSaver()
                     json_saver.add_vacancy(vacancy1)
-                    print(f"Выполнено сохранение вакансии {vacancy1.get_job_properties["name"]} "
-                          f"c ID-{vacancy1.get_job_properties["id"]} \n")
+                    print(
+                        f"Выполнено сохранение вакансии {vacancy1.get_job_properties["name"]} "
+                        f"c ID-{vacancy1.get_job_properties["id"]} \n"
+                    )
                 else:
-                    print(f"Выберите имя файл из списка\n"
-                          f"или укажите имя нового файл, для сохранения созданной вакансии \n"
-                          f"если оставить значение пустым (будет использоваться файл по умолчанию 'job_information')")
+                    print(
+                        "Выберите имя файл из списка\n"
+                        "или укажите имя нового файл, для сохранения созданной вакансии \n"
+                        "если оставить значение пустым (будет использоваться файл по умолчанию 'job_information')"
+                    )
                     for i, file in enumerate(os.listdir("data")):
                         print(f"{i + 1}) {file}")
                     file_to_save = input("->")
@@ -63,15 +72,21 @@ def user_interface() -> None:
                     else:
                         json_saver = JSONSaver()
                     json_saver.add_vacancy(vacancy1)
-                    print(f"Выполнено сохранение вакансии {vacancy1.get_job_properties["name"]} "
-                          f"c ID-{vacancy1.get_job_properties["id"]} \n")
-                delete_vacancy = input(f"Удалит вакансию {vacancy1.get_job_properties["name"]} "
-                                       f"c ID-{vacancy1.get_job_properties["id"]} из файла? \n"
-                                       f"Y = 'yes'/ N = 'no'->")
+                    print(
+                        f"Выполнено сохранение вакансии {vacancy1.get_job_properties["name"]} "
+                        f"c ID-{vacancy1.get_job_properties["id"]} \n"
+                    )
+                delete_vacancy = input(
+                    f"Удалит вакансию {vacancy1.get_job_properties["name"]} "
+                    f"c ID-{vacancy1.get_job_properties["id"]} из файла? \n"
+                    f"Y = 'yes'/ N = 'no'->"
+                )
                 if delete_vacancy.lower() == "y":
                     json_saver.delete_vacancy(vacancy1)
-                    print(f"Выполнено удаление вакансии {vacancy1.get_job_properties["name"]} "
-                          f"c ID-{vacancy1.get_job_properties["id"]} \n")
+                    print(
+                        f"Выполнено удаление вакансии {vacancy1.get_job_properties["name"]} "
+                        f"c ID-{vacancy1.get_job_properties["id"]} \n"
+                    )
             time.sleep(2)
             print()
         elif action == "2":
@@ -80,17 +95,21 @@ def user_interface() -> None:
             hh_api = HH()
             hh_vacancies = Vacancy.cast_to_object_list(hh_api.get_vacancies(search_query))
             if len(os.listdir("data")) == 0:
-                file_to_save = input("Введите имя файл для сохранения вакансий \n"
-                                     "или оставите значение пустым (будет использоваться файл по умолчанию 'job_information')\n"
-                                     "->")
+                file_to_save = input(
+                    "Введите имя файл для сохранения вакансий \n"
+                    "или оставите значение пустым (будет использоваться файл по умолчанию 'job_information')\n"
+                    "->"
+                )
                 if file_to_save:
                     json_saver = JSONSaver(file_to_save)
                 else:
                     json_saver = JSONSaver()
             else:
-                print(f"Выберите имя файл из списка\n"
-                      f"или укажите имя нового файл, для сохранения созданной вакансий \n"
-                      f"если оставить значение пустым (будет использоваться файл по умолчанию 'job_information')")
+                print(
+                    "Выберите имя файл из списка\n"
+                    "или укажите имя нового файл, для сохранения созданной вакансий \n"
+                    "если оставить значение пустым (будет использоваться файл по умолчанию 'job_information')"
+                )
                 for i, file in enumerate(os.listdir("data")):
                     print(f"{i + 1}) {file}")
                 file_to_save = input("->")
@@ -104,10 +123,10 @@ def user_interface() -> None:
             for vacancy in hh_vacancies:
                 json_saver.add_vacancy(vacancy)
             sorted_vacancies = sort_vacancies(
-                json_saver.get_job_information(keyword, salary_range_min, salary_range_max))
+                json_saver.get_job_information(keyword, salary_range_min, salary_range_max)
+            )
             print_vacancies(get_top_vacancies(sorted_vacancies, top_n))
-            get_entire_list = input("Просмотреть весь список вакансий?\n"
-                                    "Y = 'yes'/ N = 'no'->")
+            get_entire_list = input("Просмотреть весь список вакансий?\n" "Y = 'yes'/ N = 'no'->")
             if get_entire_list.lower() == "y":
                 print_vacancies(sorted_vacancies)
                 time.sleep(3)
@@ -117,7 +136,7 @@ def user_interface() -> None:
             if len(files_vacancies) == 0:
                 print("Не найдено ни одного файла с вакансиями!")
             else:
-                print(f"Выберите имя файла из списка")
+                print("Выберите имя файла из списка")
                 for i, file in enumerate(files_vacancies):
                     print(f"{i + 1}) {file}")
                 while True:
@@ -131,12 +150,12 @@ def user_interface() -> None:
                             if len(json_saver.get_job_information()) == 0:
                                 print("Список вакансий пуст.")
                             else:
-                                clear_list = input("Удалить все вакансии из файла?\n"
-                                                   "Y = 'yes'/ N = 'no'->")
+                                clear_list = input("Удалить все вакансии из файла?\n" "Y = 'yes'/ N = 'no'->")
                                 if clear_list.lower() == "y":
                                     json_saver.delete_content()
-                            delete_a_file = input(f"Удалить файл {files_vacancies[int(file_) - 1]}?\n"
-                                                  "Y = 'yes'/ N = 'no'->")
+                            delete_a_file = input(
+                                f"Удалить файл {files_vacancies[int(file_) - 1]}?\n" "Y = 'yes'/ N = 'no'->"
+                            )
                             if delete_a_file.lower() == "y":
                                 os.remove(f"data/{files_vacancies[int(file_) - 1]}")
                                 print(f"Выполнено удаление файла {files_vacancies[int(file_) - 1]}")
@@ -153,5 +172,5 @@ def user_interface() -> None:
             break
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     user_interface()

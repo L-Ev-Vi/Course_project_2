@@ -4,6 +4,9 @@ import pytest
 
 from src.api_hh import HH
 from src.currency_exchange import CurrencyExchange
+from src.filling_in_job_information import FillingInJobInformation
+from src.filling_in_request_data import FillingInRequestData
+from src.json_saver import JSONSaver
 from src.vacancy import Vacancy
 
 
@@ -91,3 +94,143 @@ def vacancy8(input_mock):
 def vacancy9():
     vacancy9 = Vacancy("Java Developer", "<https://hh.ru/vacancy/123456>", "Требования: опыт работы от 3 лет...")
     return vacancy9
+
+
+@pytest.fixture
+def inf1():
+    return FillingInJobInformation()
+
+
+@pytest.fixture
+def req1():
+    return FillingInRequestData()
+
+
+@pytest.fixture
+def list_salary():
+    return [
+        {"salary": {"from": 500, "to": None, "currency": "RUB"}},
+        {"salary": {"from": 400, "to": None, "currency": "RUB"}},
+        {"salary": {"from": 300, "to": None, "currency": "RUB"}},
+        {"salary": {"from": 200, "to": None, "currency": "RUB"}},
+        {"salary": {"from": 100, "to": None, "currency": "RUB"}},
+    ]
+
+
+@pytest.fixture
+def list_sort():
+    return [
+        {"salary": {"from": 500, "to": None, "currency": "RUB"}},
+        {"salary": {"from": None, "to": 400, "currency": "RUB"}},
+        {"salary": {"from": 300, "to": None, "currency": "RUB"}},
+        {"salary": {"from": None, "to": 200, "currency": "RUB"}},
+        {"salary": {"from": 100, "to": None, "currency": "RUB"}},
+        {"salary": "Зарплата не указана"},
+    ]
+
+
+@pytest.fixture
+def list_sort_USD_from():
+    return [
+        {"salary": {"from": 500, "to": None, "currency": "RUB"}},
+        {"salary": {"from": None, "to": 400, "currency": "RUB"}},
+        {"salary": {"from": 300, "to": None, "currency": "RUB"}},
+        {"salary": {"from": None, "to": 200, "currency": "RUB"}},
+        {"salary": {"from": 100, "to": None, "currency": "USD"}},
+        {"salary": "Зарплата не указана"},
+    ]
+
+
+@pytest.fixture
+def list_sort_USD_to():
+    return [
+        {"salary": {"from": 500, "to": None, "currency": "RUB"}},
+        {"salary": {"from": None, "to": 400, "currency": "RUB"}},
+        {"salary": {"from": 300, "to": None, "currency": "RUB"}},
+        {"salary": {"from": None, "to": 200, "currency": "RUB"}},
+        {"salary": {"from": None, "to": 100, "currency": "USD"}},
+        {"salary": "Зарплата не указана"},
+    ]
+
+
+@pytest.fixture
+def json1():
+    return JSONSaver("test")
+
+
+@pytest.fixture
+def vacancy_RUB_to():
+    return [
+        {
+            "id": 1,
+            "name": "Java Developer",
+            "salary": {"from": None, "to": 150, "currency": "RUB"},
+            "url": "<https://hh.ru/vacancy/123456>",
+            "description": "Требования: опыт работы от 3 лет...",
+        }
+    ]
+
+
+@pytest.fixture
+def vacancy_USD_to():
+    return [
+        {
+            "id": 1,
+            "name": "Java Developer",
+            "salary": {"from": None, "to": 150, "currency": "USD"},
+            "url": "<https://hh.ru/vacancy/123456>",
+            "description": "Требования: опыт работы от 3 лет...",
+        }
+    ]
+
+
+@pytest.fixture
+def vacancy_RUB_from():
+    return [
+        {
+            "id": 1,
+            "name": "Java Developer",
+            "salary": {"from": 150, "to": None, "currency": "RUB"},
+            "url": "<https://hh.ru/vacancy/123456>",
+            "description": "Требования: опыт работы от 3 лет...",
+        }
+    ]
+
+
+@pytest.fixture
+def vacancy_USD_from():
+    return [
+        {
+            "id": 1,
+            "name": "Java Developer",
+            "salary": {"from": 150, "to": None, "currency": "USD"},
+            "url": "<https://hh.ru/vacancy/123456>",
+            "description": "Требования: опыт работы от 3 лет...",
+        }
+    ]
+
+
+@pytest.fixture
+def vacancy_USD_from_to():
+    return [
+        {
+            "id": 1,
+            "name": "Java Developer",
+            "salary": {"from": 100, "to": 150, "currency": "USD"},
+            "url": "<https://hh.ru/vacancy/123456>",
+            "description": "Требования: опыт работы от 3 лет...",
+        }
+    ]
+
+
+@pytest.fixture
+def vacancy_RUB_from_to():
+    return [
+        {
+            "id": 1,
+            "name": "Java Developer",
+            "salary": {"from": 100, "to": 150, "currency": "RUB"},
+            "url": "<https://hh.ru/vacancy/123456>",
+            "description": "Требования: опыт работы от 3 лет...",
+        }
+    ]

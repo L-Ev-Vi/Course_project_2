@@ -92,25 +92,3 @@ class HH(Parser):
             print("Для поиска вакансий необходимо указать ключевое слово или фразу")
             return result
         return result
-
-
-if __name__ == "__main__":
-    a = HH()
-    x = a.get_vacancies("python")
-    print(*x, sep="\n")
-
-# """
-# {'id': '128762270', 'name': 'Python разработчик (Middle+/Senior)',
-#  'salary': {'from': None, 'to': 410000, 'currency': 'RUB'},
-#  'alternate_url': 'https://hh.ru/vacancy/128762270', 'relations': [],
-#  'snippet': {
-#     'requirement': 'Опыт коммерческой разработки'}
-#  """
-
-# """
-# {'id': '128762270',
-#  'name': 'Python разработчик (Middle+/Senior)',
-#  'salary': {'from': None, 'to': 410000, 'currency': 'RUB'},
-#  'url': 'https://hh.ru/vacancy/128762270',
-#  'description': 'Опыт коммерческой разработки'}
-#  """

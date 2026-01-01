@@ -1,6 +1,8 @@
 import os
 from unittest.mock import patch
 
+from dotenv import load_dotenv
+
 
 def test_init_currency_exchange(currencyexchange):
     assert currencyexchange.currency == "USD"
@@ -8,6 +10,7 @@ def test_init_currency_exchange(currencyexchange):
 
 @patch("requests.get")
 def test_get_currency_exchange(mock_get, currencyexchange):
+    load_dotenv(".env")
     aip_key = os.getenv("EXC_AIP_KEY")
     mock_get.return_value.status_code = 200
     mock_get.return_value.json.return_value = {"result": 100}

@@ -18,7 +18,6 @@ class CurrencyExchange:
         """Функция выполняет API запрос на внешний сервис для получения актуального курса валют, и возвращает сумму
         переданной валюты относительно 'RUB'."""
         try:
-            # path_env = os.path.join(os.path.dirname(__file__)[:-3], '.env')
             load_dotenv(".env")
             aip_key = os.getenv("EXC_AIP_KEY")
             url = (

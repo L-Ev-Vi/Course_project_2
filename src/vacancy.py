@@ -65,7 +65,7 @@ class Vacancy:
                     if int(final_range) <= int(initial_range):
                         raise ValueError(
                             "Не корректно указана заработная плата, сумма начальной границы, оплаты труда,\n "
-                            "не должно быть больше конечной границы, пример указания корректной ЗП: '1000-2000', "
+                            "не должно быть больше конечной границы, пример указания корректной ЗП: '1000-2000', \n"
                             "'1000 - 2000' или '1 000 - 2 000'\n"
                         )
                     else:
@@ -166,8 +166,7 @@ class Vacancy:
                 salary = currency.get_currency_exchange(salary)
         return salary
 
-    @classmethod
-    def __get_minimum_other(cls, other: object) -> int:
+    def __get_minimum_wage_other(self, other: object) -> int:
         """Метод для определения минимальной предлагаемой оплаты труда сравниваемого объекта класса"""
         if not isinstance(other, Vacancy):
             raise TypeError("Переданный объект не является объектом класса 'Vacancy'")
@@ -187,12 +186,12 @@ class Vacancy:
 
     def __lt__(self, other: object) -> bool:
         """Метод для операции сравнения «меньше»"""
-        salary = self.__get_minimum_other(other)
+        salary = self.__get_minimum_wage_other(other)
         return self.__get_minimum_wage() < salary
 
     def __eq__(self, other: object) -> bool:
         """Метод для операции сравнения «меньше или равно»"""
-        salary = self.__get_minimum_other(other)
+        salary = self.__get_minimum_wage_other(other)
         return self.__get_minimum_wage() == salary
 
     @property
@@ -213,7 +212,7 @@ class Vacancy:
         try:
             if not isinstance(list_vacancies, list):
                 raise TypeError(f"Передаваемый аргумент должно быть списком вакансий а не {type(list_vacancies)}")
-            elif len(list_vacancies) == 0:
+            if len(list_vacancies) == 0:
                 raise ValueError("Передаваемый список пуст")
             else:
                 for vacancy in list_vacancies:
@@ -223,37 +222,3 @@ class Vacancy:
         except ValueError as e:
             print(e)
         return result
-
-
-if __name__ == "__main__":
-    # v = Vacancy("Python Developer", "<https://hh.ru/vacancy/123456>", "Требования: опыт работы от 3 лет...", "100")
-    # c = Vacancy("Python Developer", "<https://hh.ru/vacancy/123456>", "Требования: опыт работы от 3 лет...", "100")
-    # print(v == c)
-    # print(v._Vacancy__salary)
-    # print(v.get_job_properties)
-    # print(v)
-    # print(repr(v))
-
-    d = [
-        {
-            "id": "128762270",
-            "name": "Python разработчик (Middle+/Senior)",
-            "salary": {"from": None, "to": 410000, "currency": "RUB"},
-            "url": "https://hh.ru/vacancy/128762270",
-            "description": "Опыт коммерческой разработки",
-        },
-        {
-            "id": "128762270",
-            "name": "Python разработчик (Middle+/Senior)",
-            "salary": {"from": 300000, "to": None, "currency": "RUB"},
-            "url": "https://hh.ru/vacancy/128762270",
-            "description": "Опыт коммерческой разработки",
-        },
-        {
-            "id": "128762270",
-            "name": "Python разработчик (Middle+/Senior)",
-            "salary": None,
-            "url": "https://hh.ru/vacancy/128762270",
-            "description": "Опыт коммерческой разработки",
-        },
-    ]

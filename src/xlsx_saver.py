@@ -1,21 +1,22 @@
-import json
 import os
-from json import JSONDecodeError
 from typing import Any
+
+import numpy as np
+import pandas as pd
 
 from src.base_file_saver import FileSaver
 from src.currency_exchange import CurrencyExchange
 from src.vacancy import Vacancy
 
 
-class JSONSaver(FileSaver):
+class XLSXSaver(FileSaver):
     """Класс для работы с json-файлом"""
 
     __BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     def __init__(self, name_file: str = "job_information") -> None:
         """Конструктор объекта класса"""
-        path = os.path.join(self.__BASE_DIR, "data", f"{name_file}.json")
+        path = os.path.join(self.__BASE_DIR, "data", f"{name_file}.xlsx")
         if not os.path.exists(path):
             file = os.open(path, os.O_CREAT)
             os.close(file)
@@ -25,29 +26,54 @@ class JSONSaver(FileSaver):
     def add_vacancy(self, vacancy: object) -> None:
         """Метод добавления данных в файл. Метод принимает объект класса вакансия,
         и производит сохранение его данных в файл."""
+
         try:
             if not isinstance(vacancy, Vacancy):
                 raise TypeError(f"Добавляемый объект реализован от {type(vacancy)}, а не от класса Vacancy(Вакансия)!")
-            if not os.path.getsize(self.__path_file):
-                data = [vacancy.get_job_properties]
-                with open(self.__path_file, "a", encoding="utf=8") as file:
-                    json.dump(data, file, ensure_ascii=False, indent=4)
+            data = vacancy.get_job_properties
+            if isinstance(data["salary"], str):
+                data_vacancy = {
+                    "id": [data["id"]],
+                    "name": [data["name"]],
+                    "from": [None],
+                    "to": [None],
+                    "currency": [None],
+                    "url": [data["url"]],
+                    "description": [data["description"]],
+                }
             else:
-                with open(self.__path_file, "r", encoding="utf=8") as file:
-                    data = json.load(file)
-                value_ = [tuple(entity.values()) for entity in data]
-                if tuple(vacancy.get_job_properties.values()) in value_:
+                data_vacancy = {
+                    "id": [data["id"]],
+                    "name": [data["name"]],
+                    "from": [data["salary"]["from"]],
+                    "to": [data["salary"]["to"]],
+                    "currency": [data["salary"]["currency"]],
+                    "url": [data["url"]],
+                    "description": [data["description"]],
+                }
+            if not os.path.getsize(self.__path_file):
+                df = pd.DataFrame(data_vacancy)
+                df.set_index("id", inplace=True)
+                df.to_excel(self.__path_file)
+            else:
+                df = pd.read_excel(self.__path_file)
+                vacancies = df.to_dict(orient="records")
+                data_file = []
+                for vac in vacancies:
+                    data_file.append((vac["name"], vac["description"]))
+                if (data["name"], data["description"]) in data_file:
                     raise OverflowError(
                         f"В файл не сохраняются дубликаты вакансий, {str(vacancy)} уже содержится в файле."
                     )
                 else:
-                    data.append(vacancy.get_job_properties)
-                    with open(self.__path_file, "w", encoding="utf=8") as f:
-                        json.dump(data, f, ensure_ascii=False, indent=4)
+                    columns = pd.read_excel(self.__path_file).to_dict("list")
+                    for column, value in zip(columns, data_vacancy):
+                        columns[str(column)].append(data_vacancy[str(value)][0])
+                    df = pd.DataFrame(columns)
+                    df.set_index("id", inplace=True)
+                    df.to_excel(self.__path_file)
         except TypeError as e:
             print(e)
-        except JSONDecodeError:
-            print("Ошибка: не возможно декодировать JSON-данные")
         except OverflowError as e:
             print(e)
 
@@ -94,96 +120,84 @@ class JSONSaver(FileSaver):
                         "значение минимальной оплаты не может быть больше "
                         "значения максимальной оплаты."
                     )
-            with open(self.__path_file, "r", encoding="utf=8") as file:
-                data = json.load(file)
+            data = pd.read_excel(self.__path_file).to_dict(orient="records")
             if keyword is None:
                 if salary_range_min is None:
                     if salary_range_max is None:
                         result = data
                     else:
                         for vacancy in data:
-                            if vacancy["salary"] != "Зарплата не указана":
-                                if not vacancy["salary"]["to"]:
-                                    if vacancy["salary"]["currency"] != "RUB":
-                                        currency = CurrencyExchange(vacancy["salary"]["currency"])
-                                        if (
-                                            currency.get_currency_exchange(vacancy["salary"]["from"])
-                                            <= salary_range_max
-                                        ):
+                            if vacancy["currency"]:
+                                if np.isnan(vacancy["to"]):
+                                    if vacancy["currency"] != "RUB":
+                                        currency = CurrencyExchange(vacancy["currency"])
+                                        if currency.get_currency_exchange(vacancy["from"]) <= salary_range_max:
                                             result.append(vacancy)
                                     else:
-                                        if vacancy["salary"]["from"] <= salary_range_max:
+                                        if vacancy["from"] <= salary_range_max:
                                             result.append(vacancy)
                                 else:
-                                    if vacancy["salary"]["currency"] != "RUB":
-                                        currency = CurrencyExchange(vacancy["salary"]["currency"])
-                                        if currency.get_currency_exchange(vacancy["salary"]["to"]) <= salary_range_max:
+                                    if vacancy["currency"] != "RUB":
+                                        currency = CurrencyExchange(vacancy["currency"])
+                                        if currency.get_currency_exchange(vacancy["to"]) <= salary_range_max:
                                             result.append(vacancy)
                                     else:
-                                        if vacancy["salary"]["to"] <= salary_range_max:
+                                        if vacancy["to"] <= salary_range_max:
                                             result.append(vacancy)
                 else:
                     for vacancy in data:
-                        if vacancy["salary"] != "Зарплата не указана":
+                        if vacancy["currency"]:
                             if salary_range_max is None:
-                                if not vacancy["salary"]["from"]:
-                                    if vacancy["salary"]["currency"] != "RUB":
-                                        currency = CurrencyExchange(vacancy["salary"]["currency"])
-                                        if currency.get_currency_exchange(vacancy["salary"]["to"]) >= salary_range_min:
+                                if np.isnan(vacancy["from"]):
+                                    if vacancy["currency"] != "RUB":
+                                        currency = CurrencyExchange(vacancy["currency"])
+                                        if currency.get_currency_exchange(vacancy["to"]) >= salary_range_min:
                                             result.append(vacancy)
                                     else:
-                                        if vacancy["salary"]["to"] >= salary_range_min:
+                                        if vacancy["to"] >= salary_range_min:
                                             result.append(vacancy)
                                 else:
-                                    if vacancy["salary"]["currency"] != "RUB":
-                                        currency = CurrencyExchange(vacancy["salary"]["currency"])
-                                        if (
-                                            currency.get_currency_exchange(vacancy["salary"]["from"])
-                                            >= salary_range_min
-                                        ):
+                                    if vacancy["currency"] != "RUB":
+                                        currency = CurrencyExchange(vacancy["currency"])
+                                        if currency.get_currency_exchange(vacancy["from"]) >= salary_range_min:
                                             result.append(vacancy)
                                     else:
-                                        if vacancy["salary"]["from"] >= salary_range_min:
+                                        if vacancy["from"] >= salary_range_min:
                                             result.append(vacancy)
                             else:
-                                if not vacancy["salary"]["from"]:
-                                    if vacancy["salary"]["currency"] != "RUB":
-                                        currency = CurrencyExchange(vacancy["salary"]["currency"])
+                                if np.isnan(vacancy["to"]):
+                                    if vacancy["currency"] != "RUB":
+                                        currency = CurrencyExchange(vacancy["currency"])
                                         if (
                                             salary_range_max
-                                            >= currency.get_currency_exchange(vacancy["salary"]["to"])
+                                            >= currency.get_currency_exchange(vacancy["from"])
                                             >= salary_range_min
                                         ):
                                             result.append(vacancy)
                                     else:
-                                        if salary_range_max >= vacancy["salary"]["to"] >= salary_range_min:
+                                        if salary_range_max >= vacancy["from"] >= salary_range_min:
                                             result.append(vacancy)
-                                elif not vacancy["salary"]["to"]:
-                                    if vacancy["salary"]["currency"] != "RUB":
-                                        currency = CurrencyExchange(vacancy["salary"]["currency"])
+                                elif np.isnan(vacancy["from"]):
+                                    if vacancy["currency"] != "RUB":
+                                        currency = CurrencyExchange(vacancy["currency"])
                                         if (
                                             salary_range_max
-                                            >= currency.get_currency_exchange(vacancy["salary"]["from"])
+                                            >= currency.get_currency_exchange(vacancy["to"])
                                             >= salary_range_min
                                         ):
                                             result.append(vacancy)
                                     else:
-                                        if salary_range_max >= vacancy["salary"]["from"] >= salary_range_min:
+                                        if salary_range_max >= vacancy["to"] >= salary_range_min:
                                             result.append(vacancy)
                                 else:
-                                    if vacancy["salary"]["currency"] != "RUB":
-                                        currency = CurrencyExchange(vacancy["salary"]["currency"])
+                                    if vacancy["currency"] != "RUB":
+                                        currency = CurrencyExchange(vacancy["currency"])
                                         if salary_range_max >= currency.get_currency_exchange(
-                                            vacancy["salary"]["to"]
-                                        ) and salary_range_min <= currency.get_currency_exchange(
-                                            vacancy["salary"]["from"]
-                                        ):
+                                            vacancy["to"]
+                                        ) and salary_range_min <= currency.get_currency_exchange(vacancy["from"]):
                                             result.append(vacancy)
                                     else:
-                                        if (
-                                            salary_range_max >= vacancy["salary"]["to"]
-                                            and salary_range_min <= vacancy["salary"]["from"]
-                                        ):
+                                        if salary_range_max >= vacancy["to"] and salary_range_min <= vacancy["from"]:
                                             result.append(vacancy)
             else:
                 words = keyword.split()
@@ -200,96 +214,92 @@ class JSONSaver(FileSaver):
                                     if salary_range_max is None:
                                         result.append(vacancy)
                                     else:
-                                        if vacancy["salary"] != "Зарплата не указана":
-                                            if not vacancy["salary"]["to"]:
-                                                if vacancy["salary"]["currency"] != "RUB":
-                                                    currency = CurrencyExchange(vacancy["salary"]["currency"])
+                                        if vacancy["currency"]:
+                                            if np.isnan(vacancy["to"]):
+                                                if vacancy["currency"] != "RUB":
+                                                    currency = CurrencyExchange(vacancy["currency"])
                                                     if (
-                                                        currency.get_currency_exchange(vacancy["salary"]["from"])
+                                                        currency.get_currency_exchange(vacancy["from"])
                                                         <= salary_range_max
                                                     ):
                                                         result.append(vacancy)
                                                 else:
-                                                    if vacancy["salary"]["from"] <= salary_range_max:
+                                                    if vacancy["from"] <= salary_range_max:
                                                         result.append(vacancy)
                                             else:
-                                                if vacancy["salary"]["currency"] != "RUB":
-                                                    currency = CurrencyExchange(vacancy["salary"]["currency"])
+                                                if vacancy["currency"] != "RUB":
+                                                    currency = CurrencyExchange(vacancy["currency"])
                                                     if (
-                                                        currency.get_currency_exchange(vacancy["salary"]["to"])
+                                                        currency.get_currency_exchange(vacancy["to"])
                                                         <= salary_range_max
                                                     ):
                                                         result.append(vacancy)
                                                 else:
-                                                    if vacancy["salary"]["to"] <= salary_range_max:
+                                                    if vacancy["to"] <= salary_range_max:
                                                         result.append(vacancy)
                                 else:
-                                    if vacancy["salary"] != "Зарплата не указана":
+                                    if vacancy["currency"]:
                                         if salary_range_max is None:
-                                            if not vacancy["salary"]["from"]:
-                                                if vacancy["salary"]["currency"] != "RUB":
-                                                    currency = CurrencyExchange(vacancy["salary"]["currency"])
+                                            if np.isnan(vacancy["from"]):
+                                                if vacancy["currency"] != "RUB":
+                                                    currency = CurrencyExchange(vacancy["currency"])
                                                     if (
-                                                        currency.get_currency_exchange(vacancy["salary"]["to"])
+                                                        currency.get_currency_exchange(vacancy["to"])
                                                         >= salary_range_min
                                                     ):
                                                         result.append(vacancy)
                                                 else:
-                                                    if vacancy["salary"]["to"] >= salary_range_min:
+                                                    if vacancy["to"] >= salary_range_min:
                                                         result.append(vacancy)
                                             else:
-                                                if vacancy["salary"]["currency"] != "RUB":
-                                                    currency = CurrencyExchange(vacancy["salary"]["currency"])
+                                                if vacancy["currency"] != "RUB":
+                                                    currency = CurrencyExchange(vacancy["currency"])
                                                     if (
-                                                        currency.get_currency_exchange(vacancy["salary"]["from"])
+                                                        currency.get_currency_exchange(vacancy["from"])
                                                         >= salary_range_min
                                                     ):
                                                         result.append(vacancy)
                                                 else:
-                                                    if vacancy["salary"]["from"] >= salary_range_min:
+                                                    if vacancy["from"] >= salary_range_min:
                                                         result.append(vacancy)
                                         else:
-                                            if not vacancy["salary"]["from"]:
-                                                if vacancy["salary"]["currency"] != "RUB":
-                                                    currency = CurrencyExchange(vacancy["salary"]["currency"])
+                                            if np.isnan(vacancy["from"]):
+                                                if vacancy["currency"] != "RUB":
+                                                    currency = CurrencyExchange(vacancy["currency"])
                                                     if (
                                                         salary_range_max
-                                                        >= currency.get_currency_exchange(vacancy["salary"]["to"])
+                                                        >= currency.get_currency_exchange(vacancy["to"])
                                                         >= salary_range_min
                                                     ):
                                                         result.append(vacancy)
                                                 else:
-                                                    if salary_range_max >= vacancy["salary"]["to"] >= salary_range_min:
+                                                    if salary_range_max >= vacancy["to"] >= salary_range_min:
                                                         result.append(vacancy)
-                                            elif not vacancy["salary"]["to"]:
-                                                if vacancy["salary"]["currency"] != "RUB":
-                                                    currency = CurrencyExchange(vacancy["salary"]["currency"])
+                                            elif np.isnan(vacancy["to"]):
+                                                if vacancy["currency"] != "RUB":
+                                                    currency = CurrencyExchange(vacancy["currency"])
                                                     if (
                                                         salary_range_max
-                                                        >= currency.get_currency_exchange(vacancy["salary"]["from"])
+                                                        >= currency.get_currency_exchange(vacancy["from"])
                                                         >= salary_range_min
                                                     ):
                                                         result.append(vacancy)
                                                 else:
-                                                    if (
-                                                        salary_range_max
-                                                        >= vacancy["salary"]["from"]
-                                                        >= salary_range_min
-                                                    ):
+                                                    if salary_range_max >= vacancy["from"] >= salary_range_min:
                                                         result.append(vacancy)
                                             else:
-                                                if vacancy["salary"]["currency"] != "RUB":
-                                                    currency = CurrencyExchange(vacancy["salary"]["currency"])
+                                                if vacancy["currency"] != "RUB":
+                                                    currency = CurrencyExchange(vacancy["currency"])
                                                     if salary_range_max >= currency.get_currency_exchange(
-                                                        vacancy["salary"]["to"]
+                                                        vacancy["to"]
                                                     ) and salary_range_min <= currency.get_currency_exchange(
-                                                        vacancy["salary"]["from"]
+                                                        vacancy["from"]
                                                     ):
                                                         result.append(vacancy)
                                                 else:
                                                     if (
-                                                        salary_range_max >= vacancy["salary"]["to"]
-                                                        and salary_range_min <= vacancy["salary"]["from"]
+                                                        salary_range_max >= vacancy["to"]
+                                                        and salary_range_min <= vacancy["from"]
                                                     ):
                                                         result.append(vacancy)
         except TypeError as e:
@@ -305,8 +315,7 @@ class JSONSaver(FileSaver):
         try:
             if not os.path.getsize(self.__path_file):
                 raise FileNotFoundError("Не возможно выполнить удаление объекта из пустого файла")
-            with open(self.__path_file, "r", encoding="utf=8") as file:
-                data = json.load(file)
+            data = pd.read_excel(self.__path_file).to_dict(orient="records")
             if len(data) == 0:
                 raise FileNotFoundError("Не возможно выполнить удаление объекта из пустого файла")
             if not isinstance(vacancy, Vacancy):
@@ -315,21 +324,99 @@ class JSONSaver(FileSaver):
                     f"объект реализован от {type(vacancy)}, а не от класса Vacancy(Вакансия)!"
                 )
             else:
-                with open(self.__path_file, "r", encoding="utf=8") as file:
-                    data = json.load(file)
-                value_ = [tuple(entity.values()) for entity in data]
-                if tuple(vacancy.get_job_properties.values()) not in value_:
+                vacancy_df = vacancy.get_job_properties
+                if isinstance(vacancy_df["salary"], str):
+                    data_vacancy = {
+                        "id": vacancy_df["id"],
+                        "name": vacancy_df["name"],
+                        "from": None,
+                        "to": None,
+                        "currency": None,
+                        "url": vacancy_df["url"],
+                        "description": vacancy_df["description"],
+                    }
+                elif vacancy_df["salary"]["from"] is None:
+                    data_vacancy = {
+                        "id": vacancy_df["id"],
+                        "name": vacancy_df["name"],
+                        "from": None,
+                        "to": vacancy_df["salary"]["to"],
+                        "currency": vacancy_df["salary"]["currency"],
+                        "url": vacancy_df["url"],
+                        "description": vacancy_df["description"],
+                    }
+                elif vacancy_df["salary"]["to"] is None:
+                    data_vacancy = {
+                        "id": vacancy_df["id"],
+                        "name": vacancy_df["name"],
+                        "from": vacancy_df["salary"]["from"],
+                        "to": None,
+                        "currency": vacancy_df["salary"]["currency"],
+                        "url": vacancy_df["url"],
+                        "description": vacancy_df["description"],
+                    }
+                else:
+                    data_vacancy = {
+                        "id": vacancy_df["id"],
+                        "name": vacancy_df["name"],
+                        "from": vacancy_df["salary"]["from"],
+                        "to": vacancy_df["salary"]["to"],
+                        "currency": vacancy_df["salary"]["currency"],
+                        "url": vacancy_df["url"],
+                        "description": vacancy_df["description"],
+                    }
+                vacancies_df = []
+                for vacancy_ in data:
+                    if isinstance(vacancy_["currency"], float):
+                        vacancy_["from"] = None
+                        vacancy_["to"] = None
+                        vacancy_["currency"] = None
+                        vacancies_df.append(tuple(vacancy_.values()))
+                    elif np.isnan(vacancy_["from"]):
+                        vacancy_["from"] = None
+                        vacancies_df.append(tuple(vacancy_.values()))
+                    elif np.isnan(vacancy_["to"]):
+                        vacancy_["to"] = None
+                        vacancies_df.append(tuple(vacancy_.values()))
+                    else:
+                        vacancies_df.append(tuple(vacancy_.values()))
+                if tuple(data_vacancy.values()) not in vacancies_df:
                     raise ValueError(f"Не возможно выполнить удаление, в файле отсутствует вакансия, {str(vacancy)}")
                 else:
-                    data.pop(value_.index(tuple(vacancy.get_job_properties.values())))
-                    with open(self.__path_file, "w", encoding="utf=8") as f:
-                        json.dump(data, f, ensure_ascii=False, indent=4)
+                    list_id = list()
+                    list_name = list()
+                    list_from = list()
+                    list_to = list()
+                    list_currency = list()
+                    list_url = list()
+                    list_description = list()
+                    vacancies_df.pop(vacancies_df.index(tuple(data_vacancy.values())))
+                    for vacancy_ty in vacancies_df:
+                        list_id.append(vacancy_ty[0])
+                        list_name.append(vacancy_ty[1])
+                        list_from.append(vacancy_ty[2])
+                        list_to.append(vacancy_ty[3])
+                        list_currency.append(vacancy_ty[4])
+                        list_url.append(vacancy_ty[5])
+                        list_description.append(vacancy_ty[6])
+                    df = pd.DataFrame(
+                        {
+                            "id": list_id,
+                            "name": list_name,
+                            "from": list_from,
+                            "to": list_to,
+                            "currency": list_currency,
+                            "url": list_url,
+                            "description": list_description,
+                        }
+                    )
+                    df.set_index("id", inplace=True)
+                    df.to_excel(self.__path_file)
+
         except TypeError as e:
             print(e)
         except FileNotFoundError as e:
             print(e)
-        except JSONDecodeError:
-            print("Ошибка: не возможно декодировать JSON-данные")
         except ValueError as e:
             print(e)
         except Exception as e:
@@ -340,17 +427,17 @@ class JSONSaver(FileSaver):
         try:
             if not os.path.getsize(self.__path_file):
                 raise FileNotFoundError("Не возможно выполнить удаление объекта из пустого файла!")
-            with open(self.__path_file, "r", encoding="utf=8") as file:
-                data = json.load(file)
+            data = pd.read_excel(self.__path_file).to_dict(orient="records")
             if len(data) == 0:
                 raise FileNotFoundError("Не возможно выполнить удаление объекта из пустого файла!")
             else:
-                with open(self.__path_file, "w", encoding="utf=8") as file:
-                    json.dump([], file, ensure_ascii=False, indent=4)
+                df = pd.DataFrame(
+                    {"id": [], "name": [], "from": [], "to": [], "currency": [], "url": [], "description": []}
+                )
+                df.set_index("id", inplace=True)
+                df.to_excel(self.__path_file)
                 print("Выполнена очистка файла!")
         except FileNotFoundError as e:
             print(e)
-        except JSONDecodeError:
-            print("Ошибка: не возможно декодировать JSON-данные")
         except Exception as e:
             print(e)

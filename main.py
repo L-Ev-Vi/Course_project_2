@@ -142,7 +142,7 @@ def user_interface() -> None:
                 while True:
                     file_ = input("->")
                     if file_.isdigit():
-                        if 0 < int(file_) <= (len(files_vacancies) + 1):
+                        if 0 < int(file_) <= len(files_vacancies):
                             file_name = files_vacancies[int(file_) - 1][:-5]
                             json_saver = JSONSaver(file_name)
                             print_vacancies(json_saver.get_job_information())

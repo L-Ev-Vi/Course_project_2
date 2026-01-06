@@ -8,6 +8,7 @@ from src.filling_in_job_information import FillingInJobInformation
 from src.filling_in_request_data import FillingInRequestData
 from src.json_saver import JSONSaver
 from src.vacancy import Vacancy
+from src.xlsx_saver import XLSXSaver
 
 
 @pytest.fixture
@@ -234,3 +235,18 @@ def vacancy_RUB_from_to():
             "description": "Требования: опыт работы от 3 лет...",
         }
     ]
+
+
+@pytest.fixture
+def xlsx1():
+    return XLSXSaver("test")
+
+
+@pytest.fixture
+@patch("builtins.input")
+def vacancy10(input_mock):
+    input_mock.return_value = "2"
+    vacancy10 = Vacancy(
+        "Python Developer", "<https://hh.ru/vacancy/123456>", "Требования: опыт работы от 3 лет...", "100-150"
+    )
+    return vacancy10

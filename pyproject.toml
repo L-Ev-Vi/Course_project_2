@@ -26,6 +26,12 @@ isort = "^7.0.0"
 pytest = "^9.0.2"
 pytest-cov = "^7.0.0"
 requests = "^2.32.5"
+python-dotenv = "^1.2.1"
+types-requests = "^2.32.4.20250913"
+accessify = "^0.3.1"
+pandas = "^2.3.3"
+pandas-stubs = "^2.3.3.251219"
+openpyxl = "^3.1.5"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -48,3 +54,7 @@ exclude = '''
   )/
 )
 '''
+
+[[tool.mypy.overrides]]
+module = ["accessify"]
+follow_untyped_imports = true

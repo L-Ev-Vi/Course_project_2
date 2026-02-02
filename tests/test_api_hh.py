@@ -62,21 +62,7 @@ def test_get_vacancies(mock_get, object_hh1):
             "salary": None,
             "url": "https://hh.ru/vacancy/128762270",
             "description": "Опыт коммерческой разработки",
-        },
-        {
-            "id": "128762270",
-            "name": "Python разработчик (Middle+/Senior)",
-            "salary": {"from": None, "to": 410000, "currency": "RUB"},
-            "url": "https://hh.ru/vacancy/128762270",
-            "description": "Опыт коммерческой разработки",
-        },
-        {
-            "id": "128762270",
-            "name": "Python разработчик (Middle+/Senior)",
-            "salary": None,
-            "url": "https://hh.ru/vacancy/128762270",
-            "description": "Опыт коммерческой разработки",
-        },
+        }
     ]
     mock_get.assert_called()
 
@@ -130,7 +116,7 @@ def test_get_vacancies_(mock_get, object_hh1):
             }
         ],
         "found": 32,
-        "pages": 0,
+        "pages": 1,
         "page": 0,
         "per_page": 50,
         "clusters": None,

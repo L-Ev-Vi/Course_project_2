@@ -37,7 +37,7 @@ class HH(Parser):
                     raise ApiRequestError
                 result = response.json()
                 vacancies.extend(result["items"])
-                if result["pages"] == self.__params["page"]:
+                if result["pages"] -1 == self.__params["page"]:
                     break
                 else:
                     self.__params["page"] += 1
